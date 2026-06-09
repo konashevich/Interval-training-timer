@@ -1,6 +1,6 @@
 # Interval Training Timer
 
-A mobile-friendly interval training timer you can run in any modern browser. Design custom work/rest patterns, save multiple trainings, and follow along with visual and audio cues—no install or build step required.
+A mobile-friendly interval training timer you can run in any modern browser—or install as a PWA on your phone for fullscreen, home-screen access. Design custom work/rest patterns, save multiple trainings, and follow along with visual and audio cues. No build step required.
 
 **Live app:** [https://timer.konashevych.com/](https://timer.konashevych.com/)  
 Also available at [https://konashevich.github.io/Interval-training-timer/](https://konashevich.github.io/Interval-training-timer/)
@@ -12,6 +12,7 @@ Also available at [https://konashevich.github.io/Interval-training-timer/](https
 - **Training Manager** — Save, load, edit, and delete named presets (stored in `localStorage`)
 - **Audio cues** — Web Audio synthesizer with configurable regular and emphasised final beeps
 - **Internationalization** — English by default; Ukrainian UI when the browser language is Ukrainian or Russian
+- **PWA** — Installable on mobile (Add to Home Screen), offline app-shell caching, settings with About and manual install
 
 ## Getting Started
 

@@ -1,0 +1,61 @@
+{
+  "name": "Interval Training Timer",
+  "short_name": "Timer",
+  "description": "Design and run interval training workouts",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#10b981",
+  "background_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-timer.png",
+      "sizes": "554x931",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Interval timer with circular progress"
+    },
+    {
+      "src": "/screenshots/screenshot-designer.png",
+      "sizes": "554x931",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Training designer with work/rest segments"
+    },
+    {
+      "src": "/screenshots/screenshot-designer-templates.png",
+      "sizes": "554x931",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Choose from built-in training templates"
+    },
+    {
+      "src": "/screenshots/screenshot-manager.png",
+      "sizes": "554x931",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Training manager with saved presets"
+    }
+  ]
+}
