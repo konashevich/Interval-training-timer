@@ -1,10 +1,15 @@
-const CACHE_NAME = 'interval-timer-v2';
+const CACHE_NAME = 'interval-timer-v4';
 
 const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
+  '/favicon.ico',
   '/docs/timer_logo.svg',
+  '/icons/favicon.svg',
+  '/icons/favicon.ico',
+  '/icons/favicon-16x16.png',
+  '/icons/favicon-32x32.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/icon-maskable-512.png',

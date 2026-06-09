@@ -6,7 +6,10 @@
   <title>Interval Training Timer</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#10b981">
-  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icons/favicon-32x32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/icons/favicon-16x16.png" type="image/png" sizes="16x16">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -554,6 +557,7 @@
         aboutWebsite: 'Website',
         aboutVersion: 'Version',
         iosInstallHint: 'Tap the Share button in Safari, then choose "Add to Home Screen".',
+        androidInstallHint: 'Tap the menu (⋮) in your browser and choose "Install app" or "Add to Home screen".',
         installUnavailable: 'Install is not available in this browser.'
       },
       uk: {
@@ -665,6 +669,7 @@
         aboutWebsite: 'Вебсайт',
         aboutVersion: 'Версія',
         iosInstallHint: 'Натисніть «Поділитися» в Safari, потім оберіть «На екран Додому».',
+        androidInstallHint: 'Натисніть меню (⋮) у браузері та оберіть «Встановити застосунок» або «На головний екран».',
         installUnavailable: 'Встановлення недоступне в цьому браузері.'
       }
     };
@@ -1925,6 +1930,10 @@
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     }
 
+    function isAndroid() {
+      return /Android/i.test(navigator.userAgent);
+    }
+
     function isInstalled() {
       return window.matchMedia('(display-mode: standalone)').matches
         || window.navigator.standalone === true;
@@ -1932,7 +1941,23 @@
 
     function canOfferInstall() {
       if (isInstalled()) return false;
-      return !!deferredInstallPrompt || isIOS();
+      return !!deferredInstallPrompt || isMobileDevice();
+    }
+
+    function updateInstallModalHints() {
+      if (deferredInstallPrompt) {
+        iosInstallHint.classList.add('hidden');
+        return;
+      }
+      if (isIOS()) {
+        iosInstallHint.textContent = t('iosInstallHint');
+        iosInstallHint.classList.remove('hidden');
+      } else if (isAndroid()) {
+        iosInstallHint.textContent = t('androidInstallHint');
+        iosInstallHint.classList.remove('hidden');
+      } else {
+        iosInstallHint.classList.add('hidden');
+      }
     }
 
     function loadPwaPrefs() {
@@ -1973,16 +1998,11 @@
     }
 
     function showInstallModal(fromSettings) {
+      if (isInstalled()) return;
       if (!fromSettings && !shouldShowInstallPrompt()) return;
-      if (!canOfferInstall() && !fromSettings) return;
+      if (!fromSettings && !isMobileDevice()) return;
 
-      if (isIOS() && !deferredInstallPrompt) {
-        iosInstallHint.textContent = t('iosInstallHint');
-        iosInstallHint.classList.remove('hidden');
-      } else {
-        iosInstallHint.classList.add('hidden');
-      }
-
+      updateInstallModalHints();
       installDontAskAgain.checked = false;
       installModal.classList.remove('hidden');
       installModal.setAttribute('aria-hidden', 'false');
@@ -2003,7 +2023,8 @@
         hideInstallModal();
         return;
       }
-      if (isIOS()) {
+      if (isMobileDevice()) {
+        updateInstallModalHints();
         showInstallModal(true);
         return;
       }
@@ -2048,9 +2069,8 @@
     }
 
     function maybeShowInstallPrompt() {
-      if (shouldShowInstallPrompt() && canOfferInstall()) {
-        setTimeout(() => showInstallModal(false), 500);
-      }
+      if (!shouldShowInstallPrompt()) return;
+      setTimeout(() => showInstallModal(false), 600);
     }
 
     function registerServiceWorker() {
@@ -2064,6 +2084,9 @@
       e.preventDefault();
       deferredInstallPrompt = e;
       updateInstallVisibility();
+      updateInstallModalHints();
+      if (!installModal.classList.contains('hidden')) return;
+      maybeShowInstallPrompt();
     });
 
     window.addEventListener('appinstalled', () => {
