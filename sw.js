@@ -1,4 +1,4 @@
-const CACHE_NAME = 'interval-timer-v5';
+const CACHE_NAME = 'interval-timer-v7';
 
 const PRECACHE_URLS = [
   '/',
