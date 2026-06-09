@@ -793,6 +793,153 @@
     // --- Designer UI ---
     // =========================================================================
 
+    const TRAINING_TEMPLATES = [
+      {
+        id: 'tabata',
+        nameKey: 'templateTabata',
+        descKey: 'templateTabataDesc',
+        segments: [{ kind: 'work', duration: 20 }, { kind: 'rest', duration: 10 }],
+        cycles: 8,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      },
+      {
+        id: 'classic',
+        nameKey: 'templateClassic',
+        descKey: 'templateClassicDesc',
+        segments: [{ kind: 'work', duration: 10 }, { kind: 'rest', duration: 3 }],
+        cycles: 10,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      },
+      {
+        id: 'hiit3015',
+        nameKey: 'templateHiit3015',
+        descKey: 'templateHiit3015Desc',
+        segments: [{ kind: 'work', duration: 30 }, { kind: 'rest', duration: 15 }],
+        cycles: 10,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      },
+      {
+        id: 'emom',
+        nameKey: 'templateEmom',
+        descKey: 'templateEmomDesc',
+        segments: [{ kind: 'work', duration: 60 }, { kind: 'rest', duration: 0 }],
+        cycles: 12,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      },
+      {
+        id: 'sprint',
+        nameKey: 'templateSprint',
+        descKey: 'templateSprintDesc',
+        segments: [{ kind: 'work', duration: 15 }, { kind: 'rest', duration: 45 }],
+        cycles: 10,
+        audio: { pitchNormal: 900, pitchHeavy: 1300 }
+      },
+      {
+        id: 'gibala',
+        nameKey: 'templateGibala',
+        descKey: 'templateGibalaDesc',
+        segments: [{ kind: 'work', duration: 60 }, { kind: 'rest', duration: 75 }],
+        cycles: 8,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      },
+      {
+        id: 'norwegian',
+        nameKey: 'templateNorwegian',
+        descKey: 'templateNorwegianDesc',
+        segments: [{ kind: 'work', duration: 240 }, { kind: 'rest', duration: 180 }],
+        cycles: 4,
+        audio: { pitchNormal: 700, pitchHeavy: 1100 }
+      },
+      {
+        id: 'boxing',
+        nameKey: 'templateBoxing',
+        descKey: 'templateBoxingDesc',
+        segments: [{ kind: 'work', duration: 180 }, { kind: 'rest', duration: 60 }],
+        cycles: 12,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      },
+      {
+        id: 'thirty30',
+        nameKey: 'template3030',
+        descKey: 'template3030Desc',
+        segments: [{ kind: 'work', duration: 30 }, { kind: 'rest', duration: 30 }],
+        cycles: 10,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      },
+      {
+        id: 'wingate',
+        nameKey: 'templateWingate',
+        descKey: 'templateWingateDesc',
+        segments: [{ kind: 'work', duration: 30 }, { kind: 'rest', duration: 240 }],
+        cycles: 4,
+        audio: { pitchNormal: 1000, pitchHeavy: 1400 }
+      },
+      {
+        id: 'pyramid',
+        nameKey: 'templatePyramid',
+        descKey: 'templatePyramidDesc',
+        segments: [
+          { kind: 'work', duration: 20, label: 'Sprint' },
+          { kind: 'rest', duration: 10 },
+          { kind: 'work', duration: 30, label: 'Push' },
+          { kind: 'rest', duration: 15 },
+          { kind: 'work', duration: 40, label: 'Peak' },
+          { kind: 'rest', duration: 20 }
+        ],
+        cycles: 2,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 }
+      }
+    ];
+
+    const templatePresetSelect = document.getElementById('templatePresetSelect');
+    const templatePresetDesc = document.getElementById('templatePresetDesc');
+
+    function populateTemplateDropdown() {
+      if (!templatePresetSelect) return;
+      templatePresetSelect.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = t('templateChoose');
+      templatePresetSelect.appendChild(placeholder);
+      TRAINING_TEMPLATES.forEach(tmpl => {
+        const opt = document.createElement('option');
+        opt.value = tmpl.id;
+        opt.textContent = t(tmpl.nameKey);
+        templatePresetSelect.appendChild(opt);
+      });
+      templatePresetSelect.value = '';
+    }
+
+    function resetTemplateSelect() {
+      if (templatePresetSelect) templatePresetSelect.value = '';
+      if (templatePresetDesc) templatePresetDesc.classList.add('hidden');
+    }
+
+    function loadDesignerFromTemplate(templateId) {
+      const template = TRAINING_TEMPLATES.find(tmpl => tmpl.id === templateId);
+      if (!template) return;
+
+      designerEditId = null;
+      designerDraft = {
+        segments: template.segments.map(s => createSegment(s.kind, s.duration, s.label || '')),
+        cycles: template.cycles,
+        audio: { ...template.audio }
+      };
+      presetNameInput.value = t(template.nameKey);
+      presetDefaultCheckbox.checked = false;
+      deletePresetBtn.classList.add('hidden');
+      savePresetBtn.textContent = t('saveTraining');
+
+      if (template.descKey && templatePresetDesc) {
+        templatePresetDesc.textContent = t(template.descKey);
+        templatePresetDesc.classList.remove('hidden');
+      }
+
+      resetTemplateSelect();
+      renderDesigner();
+      showToast(t('templateLoaded', { name: t(template.nameKey) }), 'layout-template');
+    }
+
     function resetDesignerForm() {
       designerDraft = {
         segments: [createSegment('work', 20), createSegment('rest', 10)],
@@ -804,6 +951,7 @@
       presetDefaultCheckbox.checked = false;
       deletePresetBtn.classList.add('hidden');
       savePresetBtn.textContent = t('saveTraining');
+      resetTemplateSelect();
     }
 
     function loadDesignerFromPreset(preset) {
@@ -816,6 +964,7 @@
       presetDefaultCheckbox.checked = preset.isDefault;
       deletePresetBtn.classList.remove('hidden');
       savePresetBtn.textContent = t('updateTraining');
+      resetTemplateSelect();
     }
 
     function updateDesignerSummary() {
@@ -936,6 +1085,15 @@
       designerEditId = null;
       resetDesignerForm();
       renderDesigner();
+    });
+
+    templatePresetSelect.addEventListener('change', () => {
+      const id = templatePresetSelect.value;
+      if (!id) {
+        resetTemplateSelect();
+        return;
+      }
+      loadDesignerFromTemplate(id);
     });
 
     document.getElementById('addWorkBtn').addEventListener('click', () => {
