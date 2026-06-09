@@ -10,9 +10,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+    }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       -webkit-tap-highlight-color: transparent;
+    }
+    :root {
+      --tab-bar-inset: calc(5rem + env(safe-area-inset-bottom, 0px));
     }
     .mono {
       font-family: 'Share Tech Mono', monospace;
@@ -27,8 +35,33 @@
     .animate-pulse-subtle {
       animation: pulse-subtle 2s infinite ease-in-out;
     }
-    .tab-panel { display: none; }
+    .tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0; }
     .tab-panel.active { display: flex; }
+    #mainTimerBody {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #mainTimerScaler {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-height: 100%;
+      transform-origin: center center;
+      transition: transform 0.15s ease-out;
+      gap: clamp(0.25rem, 1.5vh, 1rem);
+    }
+    #timerCircle {
+      width: min(72vw, 20rem, 36dvh);
+      height: min(72vw, 20rem, 36dvh);
+      flex-shrink: 1;
+    }
+    #countdownText {
+      font-size: clamp(2.75rem, 16vw, 5rem);
+      line-height: 1;
+    }
     .tab-btn-side.active { color: rgb(52 211 153); }
     .tab-btn-side.active .tab-icon-wrap {
       background-color: rgba(16, 185, 129, 0.15);
@@ -77,11 +110,12 @@
       border-color: rgba(245, 158, 11, 0.5);
       color: rgb(251 191 36);
     }
-    .pb-safe { padding-bottom: max(6rem, env(safe-area-inset-bottom, 0px) + 5rem); }
-    #toast { bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); }
+    .pb-safe { padding-bottom: var(--tab-bar-inset); }
+    #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
+    #appShell { padding-bottom: var(--tab-bar-inset); }
   </style>
 </head>
-<body class="bg-neutral-950 text-neutral-100 min-h-screen flex flex-col overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
+<body class="bg-neutral-950 text-neutral-100 flex flex-col overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
 
   <div id="flashOverlay" class="fixed inset-0 bg-transparent pointer-events-none z-0 pulse-bg"></div>
 
@@ -101,37 +135,63 @@
   </header>
 
   <!-- Tab Panels Container -->
-  <div class="relative z-10 flex-1 w-full max-w-md mx-auto flex flex-col min-h-0">
+  <div id="appShell" class="relative z-10 flex-1 w-full max-w-md mx-auto flex flex-col min-h-0">
 
     <!-- MAIN TAB -->
-    <div id="tabMain" class="tab-panel active flex-1 flex-col justify-center items-center px-6">
-      <div class="mb-4">
-        <span id="stateBadge" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-neutral-900 border border-neutral-800 text-neutral-400 transition-colors duration-300" data-i18n="ready">
-          Ready
-        </span>
-      </div>
+    <div id="tabMain" class="tab-panel active">
+      <div id="mainTimerBody" class="flex flex-col items-center justify-center px-6">
+        <div id="mainTimerScaler">
+          <div class="shrink-0">
+            <span id="stateBadge" class="px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-neutral-900 border border-neutral-800 text-neutral-400 transition-colors duration-300" data-i18n="ready">
+              Ready
+            </span>
+          </div>
 
-      <div class="relative w-72 h-72 md:w-80 md:h-80 flex items-center justify-center">
-        <svg class="absolute w-full h-full transform -rotate-90" viewBox="0 0 200 200">
-          <circle cx="100" cy="100" r="88" class="stroke-neutral-900 fill-transparent" stroke-width="8" />
-          <circle id="progressRing" cx="100" cy="100" r="88"
-            class="stroke-emerald-500 fill-transparent transition-all duration-200"
-            stroke-width="8" stroke-linecap="round"
-            stroke-dasharray="552.9" stroke-dashoffset="0" />
-        </svg>
-        <div class="text-center z-10 flex flex-col items-center">
-          <div id="countdownText" class="mono text-7xl md:text-8xl font-bold tracking-tight text-white leading-none transition-transform duration-150">10</div>
-          <div id="phaseText" class="text-xs uppercase font-extrabold tracking-widest text-emerald-400 mt-2 transition-colors duration-300" data-i18n="readyToStart">Ready To Start</div>
-          <div class="flex items-center gap-1.5 mt-4 bg-neutral-900/60 px-3 py-1 rounded-full border border-neutral-800/80">
-            <span class="text-[10px] uppercase font-bold tracking-wider text-neutral-500" data-i18n="cycle">Cycle</span>
-            <span id="roundProgress" class="mono text-sm font-extrabold text-neutral-200">0 <span class="text-neutral-500 font-normal">/</span> 10</span>
+          <div id="timerCircle" class="relative flex items-center justify-center">
+            <svg class="absolute w-full h-full transform -rotate-90" viewBox="0 0 200 200">
+              <circle cx="100" cy="100" r="88" class="stroke-neutral-900 fill-transparent" stroke-width="8" />
+              <circle id="progressRing" cx="100" cy="100" r="88"
+                class="stroke-emerald-500 fill-transparent transition-all duration-200"
+                stroke-width="8" stroke-linecap="round"
+                stroke-dasharray="552.9" stroke-dashoffset="0" />
+            </svg>
+            <div class="text-center z-10 flex flex-col items-center">
+              <div id="countdownText" class="mono font-bold tracking-tight text-white transition-transform duration-150">10</div>
+              <div id="phaseText" class="text-xs uppercase font-extrabold tracking-widest text-emerald-400 mt-2 transition-colors duration-300" data-i18n="readyToStart">Ready To Start</div>
+              <div class="flex items-center gap-1.5 mt-4 bg-neutral-900/60 px-3 py-1 rounded-full border border-neutral-800/80">
+                <span class="text-[10px] uppercase font-bold tracking-wider text-neutral-500" data-i18n="cycle">Cycle</span>
+                <span id="roundProgress" class="mono text-sm font-extrabold text-neutral-200">0 <span class="text-neutral-500 font-normal">/</span> 10</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="audioAlert" class="text-xs text-center text-amber-500/80 hidden font-medium shrink-0">
+            <i data-lucide="volume-2" class="inline w-3 h-3 mr-1 align-middle"></i><span data-i18n="tapPlayAudio"> Tap Play to enable audio</span>
           </div>
         </div>
       </div>
 
-      <div id="audioAlert" class="mt-4 text-xs text-center text-amber-500/80 hidden font-medium">
-        <i data-lucide="volume-2" class="inline w-3 h-3 mr-1 align-middle"></i><span data-i18n="tapPlayAudio"> Tap Play to enable audio</span>
-      </div>
+      <footer id="mainControls" class="shrink-0 w-full px-6 pb-2 pt-1">
+        <div class="bg-neutral-900/50 backdrop-blur-md rounded-2xl p-3 border border-neutral-900 flex items-center justify-around gap-3">
+          <button id="resetBtn" class="flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none" disabled>
+            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            <span class="text-[9px] mt-1 font-bold uppercase tracking-wider" data-i18n="reset">Reset</span>
+          </button>
+          <button id="playBtn" class="flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all duration-300">
+            <svg id="playIconSvg" class="w-7 h-7 sm:w-8 sm:h-8 fill-current ml-1" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg id="pauseIconSvg" class="w-7 h-7 sm:w-8 sm:h-8 fill-current hidden" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="6" y="4" width="4" height="16" rx="1" ry="1"></rect>
+              <rect x="14" y="4" width="4" height="16" rx="1" ry="1"></rect>
+            </svg>
+          </button>
+          <button id="skipBtn" class="flex flex-col items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none" disabled>
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+            <span class="text-[9px] mt-1 font-bold uppercase tracking-wider" data-i18n="skip">Skip</span>
+          </button>
+        </div>
+      </footer>
     </div>
 
     <!-- DESIGNER TAB -->
@@ -250,29 +310,6 @@
       <div id="presetList" class="space-y-3 pb-4"></div>
     </div>
   </div>
-
-  <!-- Main-only play controls (above tab bar) -->
-  <footer id="mainControls" class="relative z-10 w-full max-w-md mx-auto px-6 pb-2 mb-[5.5rem] shrink-0">
-    <div class="bg-neutral-900/50 backdrop-blur-md rounded-2xl p-4 border border-neutral-900 flex items-center justify-around gap-4">
-      <button id="resetBtn" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none" disabled>
-        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-        <span class="text-[9px] mt-1 font-bold uppercase tracking-wider" data-i18n="reset">Reset</span>
-      </button>
-      <button id="playBtn" class="flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all duration-300">
-        <svg id="playIconSvg" class="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-        <svg id="pauseIconSvg" class="w-8 h-8 fill-current hidden" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="4" width="4" height="16" rx="1" ry="1"></rect>
-          <rect x="14" y="4" width="4" height="16" rx="1" ry="1"></rect>
-        </svg>
-      </button>
-      <button id="skipBtn" class="flex flex-col items-center justify-center w-14 h-14 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white transition-all active:scale-95 disabled:opacity-30 disabled:pointer-events-none" disabled>
-        <i data-lucide="chevron-right" class="w-5 h-5"></i>
-        <span class="text-[9px] mt-1 font-bold uppercase tracking-wider" data-i18n="skip">Skip</span>
-      </button>
-    </div>
-  </footer>
 
   <!-- Bottom Tab Bar -->
   <nav id="tabBar" class="fixed bottom-0 inset-x-0 z-40 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
@@ -742,7 +779,6 @@
     const flashOverlay = document.getElementById('flashOverlay');
     const activeTrainingBtn = document.getElementById('activeTrainingBtn');
     const activeTrainingName = document.getElementById('activeTrainingName');
-    const mainControls = document.getElementById('mainControls');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toastMessage');
     const toastIcon = document.getElementById('toastIcon');
@@ -769,6 +805,43 @@
     const designerCycleSummary = document.getElementById('designerCycleSummary');
     const presetList = document.getElementById('presetList');
     const managerEmpty = document.getElementById('managerEmpty');
+    const tabBar = document.getElementById('tabBar');
+    const mainTimerBody = document.getElementById('mainTimerBody');
+    const mainTimerScaler = document.getElementById('mainTimerScaler');
+
+    const playBtnBaseClass = 'flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 rounded-full active:scale-95 transition-all duration-300';
+
+    // =========================================================================
+    // --- Viewport layout ---
+    // =========================================================================
+
+    function fitMainTimerScale() {
+      if (!mainTimerBody || !mainTimerScaler || currentTab !== 'main') return;
+
+      mainTimerScaler.style.transform = 'none';
+      const available = mainTimerBody.clientHeight;
+      const needed = mainTimerScaler.scrollHeight;
+      if (available <= 0 || needed <= 0) return;
+
+      const scale = Math.min(1, available / needed);
+      mainTimerScaler.style.transform = scale < 0.995 ? `scale(${Math.max(0.52, scale)})` : 'none';
+    }
+
+    function updateViewportLayout() {
+      if (tabBar) {
+        const inset = Math.ceil(tabBar.getBoundingClientRect().height);
+        document.documentElement.style.setProperty('--tab-bar-inset', `${inset}px`);
+      }
+      requestAnimationFrame(fitMainTimerScale);
+    }
+
+    let layoutObserver = null;
+    function initLayoutObserver() {
+      if (layoutObserver) return;
+      layoutObserver = new ResizeObserver(() => updateViewportLayout());
+      if (mainTimerBody) layoutObserver.observe(mainTimerBody);
+      if (tabBar) layoutObserver.observe(tabBar);
+    }
 
     // =========================================================================
     // --- Tab navigation ---
@@ -792,7 +865,6 @@
         btn.classList.toggle('active', btn.dataset.tab === tab);
       });
 
-      mainControls.classList.toggle('hidden', tab !== 'main');
       activeTrainingBtn.classList.toggle('hidden', tab !== 'main');
 
       if (tab === 'designer') {
@@ -810,6 +882,7 @@
       }
 
       lucide.createIcons();
+      if (tab === 'main') updateViewportLayout();
     }
 
     tabButtons.forEach(btn => {
@@ -1476,11 +1549,11 @@
       if (playing) {
         playIconSvg.classList.add('hidden');
         pauseIconSvg.classList.remove('hidden');
-        playBtn.className = "flex items-center justify-center w-20 h-20 rounded-full bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/40 active:scale-95 transition-all duration-300 animate-pulse-subtle";
+        playBtn.className = `${playBtnBaseClass} bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/40 animate-pulse-subtle`;
       } else {
         playIconSvg.classList.remove('hidden');
         pauseIconSvg.classList.add('hidden');
-        playBtn.className = "flex items-center justify-center w-20 h-20 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all duration-300";
+        playBtn.className = `${playBtnBaseClass} bg-emerald-500 hover:bg-emerald-400 text-neutral-950 shadow-lg shadow-emerald-500/20`;
       }
     }
 
@@ -1708,6 +1781,8 @@
 
       renderManagerList();
       applyDynamicI18n();
+      initLayoutObserver();
+      updateViewportLayout();
       lucide.createIcons();
 
       const tempCtx = window.AudioContext || window.webkitAudioContext;
@@ -1715,6 +1790,7 @@
         const dummy = new tempCtx();
         if (dummy.state === 'suspended') {
           audioAlert.classList.remove('hidden');
+          updateViewportLayout();
         }
         dummy.close();
       }
@@ -1724,7 +1800,14 @@
       if (wakeLock !== null && document.visibilityState === 'visible') {
         requestWakeLock();
       }
+      if (document.visibilityState === 'visible') updateViewportLayout();
     });
+
+    window.addEventListener('resize', updateViewportLayout);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewportLayout);
+      window.visualViewport.addEventListener('scroll', updateViewportLayout);
+    }
   </script>
 </body>
 </html>
