@@ -121,7 +121,7 @@
         </svg>
         <div class="text-center z-10 flex flex-col items-center">
           <div id="countdownText" class="mono text-7xl md:text-8xl font-bold tracking-tight text-white leading-none transition-transform duration-150">10</div>
-          <div id="phaseText" class="text-xs uppercase font-extrabold tracking-widest text-emerald-400 mt-2 transition-colors duration-300">Work Duration</div>
+          <div id="phaseText" class="text-xs uppercase font-extrabold tracking-widest text-emerald-400 mt-2 transition-colors duration-300" data-i18n="readyToStart">Ready To Start</div>
           <div class="flex items-center gap-1.5 mt-4 bg-neutral-900/60 px-3 py-1 rounded-full border border-neutral-800/80">
             <span class="text-[10px] uppercase font-bold tracking-wider text-neutral-500" data-i18n="cycle">Cycle</span>
             <span id="roundProgress" class="mono text-sm font-extrabold text-neutral-200">0 <span class="text-neutral-500 font-normal">/</span> 10</span>
@@ -397,7 +397,12 @@
         templateWingate: 'Wingate Sprints',
         templateWingateDesc: '30s all-out / 4 min rest × 4 — maximal sprint protocol',
         templatePyramid: 'Pyramid',
-        templatePyramidDesc: '20→30→40s work with rests, × 2 cycles'
+        templatePyramidDesc: '20→30→40s work with rests, × 2 cycles',
+        pyramidLabelSprint: 'Sprint',
+        pyramidLabelPush: 'Push',
+        pyramidLabelPeak: 'Peak',
+        hz: '{n} Hz',
+        secondsShort: '{n}s'
       },
       uk: {
         appTitle: 'Таймер інтервального тренування',
@@ -487,7 +492,12 @@
         templateWingate: 'Спринти Вінгейта',
         templateWingateDesc: '30 с на максимум / 4 хв відпочинку × 4 — протокол максимальних спринтів',
         templatePyramid: 'Піраміда',
-        templatePyramidDesc: '20→30→40 с роботи з відпочинком, × 2 цикли'
+        templatePyramidDesc: '20→30→40 с роботи з відпочинком, × 2 цикли',
+        pyramidLabelSprint: 'Спринт',
+        pyramidLabelPush: 'Натиск',
+        pyramidLabelPeak: 'Пік',
+        hz: '{n} Гц',
+        secondsShort: '{n} с'
       }
     };
 
@@ -526,6 +536,18 @@
       });
 
       populateTemplateDropdown();
+    }
+
+    function applyDynamicI18n() {
+      if (activePreset) updateUI();
+      renderManagerList();
+      if (designerDraft) {
+        updateDesignerSummary();
+        if (currentTab === 'designer') renderDesigner();
+      }
+      if (savePresetBtn) {
+        savePresetBtn.textContent = designerEditId ? t('updateTraining') : t('saveTraining');
+      }
     }
 
     // =========================================================================
@@ -655,7 +677,20 @@
     function formatDuration(seconds) {
       const m = Math.floor(seconds / 60);
       const s = seconds % 60;
-      return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `${s}s`;
+      return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : t('secondsShort', { n: s });
+    }
+
+    function formatSegmentDuration(seconds) {
+      return t('secondsShort', { n: seconds });
+    }
+
+    function formatHz(hz) {
+      return t('hz', { n: hz });
+    }
+
+    function resolveSegmentLabel(segment) {
+      if (segment.labelKey) return t(segment.labelKey);
+      return segment.label || '';
     }
 
     function getPresetTotalSeconds(preset) {
@@ -879,11 +914,11 @@
         nameKey: 'templatePyramid',
         descKey: 'templatePyramidDesc',
         segments: [
-          { kind: 'work', duration: 20, label: 'Sprint' },
+          { kind: 'work', duration: 20, labelKey: 'pyramidLabelSprint' },
           { kind: 'rest', duration: 10 },
-          { kind: 'work', duration: 30, label: 'Push' },
+          { kind: 'work', duration: 30, labelKey: 'pyramidLabelPush' },
           { kind: 'rest', duration: 15 },
-          { kind: 'work', duration: 40, label: 'Peak' },
+          { kind: 'work', duration: 40, labelKey: 'pyramidLabelPeak' },
           { kind: 'rest', duration: 20 }
         ],
         cycles: 2,
@@ -921,7 +956,7 @@
 
       designerEditId = null;
       designerDraft = {
-        segments: template.segments.map(s => createSegment(s.kind, s.duration, s.label || '')),
+        segments: template.segments.map(s => createSegment(s.kind, s.duration, resolveSegmentLabel(s))),
         cycles: template.cycles,
         audio: { ...template.audio }
       };
@@ -981,8 +1016,8 @@
       cyclesInput.value = designerDraft.cycles;
       pitchNormalInput.value = designerDraft.audio.pitchNormal;
       pitchHeavyInput.value = designerDraft.audio.pitchHeavy;
-      pitchNormalVal.textContent = `${designerDraft.audio.pitchNormal} Hz`;
-      pitchHeavyVal.textContent = `${designerDraft.audio.pitchHeavy} Hz`;
+      pitchNormalVal.textContent = formatHz(designerDraft.audio.pitchNormal);
+      pitchHeavyVal.textContent = formatHz(designerDraft.audio.pitchHeavy);
     }
 
     function renderDesigner() {
@@ -1019,7 +1054,7 @@
           </div>
           <div class="flex justify-between mb-1">
             <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('duration')}</span>
-            <span class="dur-val text-xs font-mono font-bold text-emerald-400">${seg.duration}s</span>
+            <span class="dur-val text-xs font-mono font-bold text-emerald-400">${formatSegmentDuration(seg.duration)}</span>
           </div>
           <input type="range" class="dur-slider w-full accent-emerald-500 bg-neutral-800 h-2 rounded-lg appearance-none cursor-pointer" min="${durMin}" max="${durMax}" value="${seg.duration}">
           <div class="mt-2">
@@ -1065,7 +1100,7 @@
         const durVal = row.querySelector('.dur-val');
         slider.addEventListener('input', () => {
           seg.duration = parseInt(slider.value, 10);
-          durVal.textContent = `${seg.duration}s`;
+          durVal.textContent = formatSegmentDuration(seg.duration);
           updateDesignerSummary();
         });
 
@@ -1113,12 +1148,12 @@
 
     pitchNormalInput.addEventListener('input', () => {
       designerDraft.audio.pitchNormal = parseInt(pitchNormalInput.value, 10);
-      pitchNormalVal.textContent = `${designerDraft.audio.pitchNormal} Hz`;
+      pitchNormalVal.textContent = formatHz(designerDraft.audio.pitchNormal);
     });
 
     pitchHeavyInput.addEventListener('input', () => {
       designerDraft.audio.pitchHeavy = parseInt(pitchHeavyInput.value, 10);
-      pitchHeavyVal.textContent = `${designerDraft.audio.pitchHeavy} Hz`;
+      pitchHeavyVal.textContent = formatHz(designerDraft.audio.pitchHeavy);
     });
 
     function validateAndSavePreset() {
@@ -1672,6 +1707,7 @@
       activeTrainingName.textContent = preset.name;
 
       renderManagerList();
+      applyDynamicI18n();
       lucide.createIcons();
 
       const tempCtx = window.AudioContext || window.webkitAudioContext;
