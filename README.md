@@ -2,7 +2,8 @@
 
 A mobile-friendly interval training timer you can run in any modern browser. Design custom work/rest patterns, save multiple trainings, and follow along with visual and audio cues—no install or build step required.
 
-**Live app:** [https://konashevich.github.io/Interval-training-timer/](https://konashevich.github.io/Interval-training-timer/)
+**Live app:** [https://timer.konashevych.com/](https://timer.konashevych.com/)  
+Also available at [https://konashevich.github.io/Interval-training-timer/](https://konashevich.github.io/Interval-training-timer/)
 
 ## Features
 
