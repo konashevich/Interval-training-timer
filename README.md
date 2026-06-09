@@ -2,6 +2,8 @@
 
 A mobile-friendly interval training timer you can run in any modern browser. Design custom work/rest patterns, save multiple trainings, and follow along with visual and audio cues—no install or build step required.
 
+**Live app:** [https://konashevich.github.io/Interval-training-timer/](https://konashevich.github.io/Interval-training-timer/)
+
 ## Features
 
 - **Timer** — Circular progress ring, cycle counter, play/pause, reset, and skip
@@ -17,10 +19,10 @@ No dependencies or build tools. Open the app in a browser:
 ```bash
 # From the project directory — use any local static server, or open the file directly
 python3 -m http.server 8080
-# Then visit http://localhost:8080/interval_beep_timer.html
+# Then visit http://localhost:8080/
 ```
 
-Or double-click `interval_beep_timer.html` to open it locally.
+Or double-click `index.html` to open it locally.
 
 > **Note:** Some browsers require a user gesture (tap Play) before audio can play.
 
@@ -34,7 +36,7 @@ Trainings persist in the browser’s `localStorage` on the same device.
 
 ## Tech Stack
 
-- Single HTML file (`interval_beep_timer.html`)
+- Single HTML file (`index.html`)
 - [Tailwind CSS](https://tailwindcss.com/) (CDN)
 - [Lucide](https://lucide.dev/) icons (CDN)
 - Web Audio API for beeps
