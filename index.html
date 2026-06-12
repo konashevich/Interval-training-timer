@@ -133,6 +133,65 @@
     .pb-safe { padding-bottom: var(--tab-bar-inset); }
     #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
     #appShell { padding-bottom: var(--tab-bar-inset); }
+    .range-slider-wrap {
+      padding: 0.625rem 0;
+      touch-action: pan-x;
+    }
+    .range-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 0.5rem;
+      border-radius: 9999px;
+      background: rgb(38 38 38);
+      accent-color: rgb(16 185 129);
+      touch-action: pan-x;
+      cursor: pointer;
+    }
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: rgb(16 185 129);
+      border: 3px solid rgb(23 23 23);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    }
+    .range-slider::-moz-range-thumb {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      background: rgb(16 185 129);
+      border: 3px solid rgb(23 23 23);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+    }
+    .stepper-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.625rem;
+      border: 1px solid rgb(64 64 64);
+      background: rgb(23 23 23);
+      color: rgb(212 212 212);
+      font-size: 1.125rem;
+      font-weight: 700;
+      line-height: 1;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .stepper-btn:active {
+      background: rgb(38 38 38);
+      border-color: rgb(82 82 82);
+      color: rgb(255 255 255);
+    }
+    .stepper-btn:disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body class="bg-neutral-950 text-neutral-100 flex flex-col overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
@@ -262,11 +321,17 @@
 
       <!-- Cycles -->
       <div class="mb-5">
-        <div class="flex justify-between mb-1.5">
+        <div class="flex justify-between items-center mb-1.5">
           <label class="text-xs font-bold uppercase tracking-wide text-neutral-400" data-i18n="cycles">Cycles</label>
-          <span id="cyclesVal" class="text-xs font-mono font-bold text-emerald-400">10 cycles</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" id="cyclesDecBtn" class="stepper-btn" aria-label="Decrease">−</button>
+            <span id="cyclesVal" class="text-xs font-mono font-bold text-emerald-400 min-w-[4.5rem] text-center">10 cycles</span>
+            <button type="button" id="cyclesIncBtn" class="stepper-btn" aria-label="Increase">+</button>
+          </div>
         </div>
-        <input type="range" id="cyclesInput" min="1" max="100" value="10" class="w-full accent-emerald-500 bg-neutral-800 h-2 rounded-lg appearance-none cursor-pointer">
+        <div class="range-slider-wrap">
+          <input type="range" id="cyclesInput" min="1" max="100" step="1" value="10" class="range-slider">
+        </div>
       </div>
 
       <div class="border-t border-neutral-800/60 my-4"></div>
@@ -275,18 +340,30 @@
       <h3 class="text-[10px] font-extrabold uppercase tracking-widest text-neutral-500 mb-3" data-i18n="audioSynthesizer">Audio Synthesizer</h3>
       <div class="space-y-5 mb-6">
         <div>
-          <div class="flex justify-between mb-1.5">
+          <div class="flex justify-between items-center mb-1.5">
             <label class="text-xs font-bold uppercase tracking-wide text-neutral-400" data-i18n="regularBeepPitch">Regular Beep Pitch</label>
-            <span id="pitchNormalVal" class="text-xs font-mono font-bold text-emerald-400">800 Hz</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="pitchNormalDecBtn" class="stepper-btn" aria-label="Decrease">−</button>
+              <span id="pitchNormalVal" class="text-xs font-mono font-bold text-emerald-400 min-w-[4rem] text-center">800 Hz</span>
+              <button type="button" id="pitchNormalIncBtn" class="stepper-btn" aria-label="Increase">+</button>
+            </div>
           </div>
-          <input type="range" id="pitchNormalInput" min="400" max="1800" step="50" value="800" class="w-full accent-emerald-500 bg-neutral-800 h-2 rounded-lg appearance-none cursor-pointer">
+          <div class="range-slider-wrap">
+            <input type="range" id="pitchNormalInput" min="400" max="1800" step="50" value="800" class="range-slider">
+          </div>
         </div>
         <div>
-          <div class="flex justify-between mb-1.5">
+          <div class="flex justify-between items-center mb-1.5">
             <label class="text-xs font-bold uppercase tracking-wide text-neutral-400" data-i18n="finalEmphasisedPitch">Final Emphasised Pitch</label>
-            <span id="pitchHeavyVal" class="text-xs font-mono font-bold text-emerald-400">1200 Hz</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="pitchHeavyDecBtn" class="stepper-btn" aria-label="Decrease">−</button>
+              <span id="pitchHeavyVal" class="text-xs font-mono font-bold text-emerald-400 min-w-[4rem] text-center">1200 Hz</span>
+              <button type="button" id="pitchHeavyIncBtn" class="stepper-btn" aria-label="Increase">+</button>
+            </div>
           </div>
-          <input type="range" id="pitchHeavyInput" min="400" max="2200" step="50" value="1200" class="w-full accent-emerald-500 bg-neutral-800 h-2 rounded-lg appearance-none cursor-pointer">
+          <div class="range-slider-wrap">
+            <input type="range" id="pitchHeavyInput" min="400" max="2200" step="50" value="1200" class="range-slider">
+          </div>
         </div>
       </div>
 
@@ -506,6 +583,8 @@
         optionalLabel: 'Optional label (e.g. Sprint)',
         moveUp: 'Move up',
         moveDown: 'Move down',
+        decrease: 'Decrease',
+        increase: 'Increase',
         deleteSegment: 'Delete segment',
         editTraining: 'Edit training',
         workInterval: 'Work Interval',
@@ -619,6 +698,8 @@
         optionalLabel: 'Необов\'язкова мітка (напр. Спринт)',
         moveUp: 'Перемістити вгору',
         moveDown: 'Перемістити вниз',
+        decrease: 'Зменшити',
+        increase: 'Збільшити',
         deleteSegment: 'Видалити сегмент',
         editTraining: 'Редагувати тренування',
         workInterval: 'Робочий інтервал',
@@ -739,6 +820,14 @@
       if (savePresetBtn) {
         savePresetBtn.textContent = designerEditId ? t('updateTraining') : t('saveTraining');
       }
+      const designerSteppers = [
+        cyclesDecBtn, cyclesIncBtn,
+        pitchNormalDecBtn, pitchNormalIncBtn,
+        pitchHeavyDecBtn, pitchHeavyIncBtn
+      ].filter(Boolean);
+      designerSteppers.forEach((btn, index) => {
+        btn.setAttribute('aria-label', index % 2 === 0 ? t('decrease') : t('increase'));
+      });
     }
 
     // =========================================================================
@@ -877,6 +966,90 @@
 
     function formatHz(hz) {
       return t('hz', { n: hz });
+    }
+
+    function clampSliderValue(value, min, max, step) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) return min;
+      const stepped = Math.round(numeric / step) * step;
+      return Math.min(max, Math.max(min, stepped));
+    }
+
+    function bindTouchFriendlySlider(slider, { min, max, step = 1, onValueChange }) {
+      let dragging = false;
+      let lockValue = false;
+      let lastValue = clampSliderValue(slider.value, min, max, step);
+
+      const applyValue = (raw, notify = true) => {
+        lastValue = clampSliderValue(raw, min, max, step);
+        slider.value = lastValue;
+        if (notify) onValueChange(lastValue);
+        return lastValue;
+      };
+
+      const finishDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        lockValue = true;
+        slider.value = lastValue;
+        onValueChange(lastValue);
+        if (e && slider.hasPointerCapture(e.pointerId)) {
+          slider.releasePointerCapture(e.pointerId);
+        }
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            lockValue = false;
+          });
+        });
+      };
+
+      slider.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        dragging = true;
+        lockValue = false;
+        lastValue = clampSliderValue(slider.value, min, max, step);
+        slider.setPointerCapture(e.pointerId);
+      });
+
+      slider.addEventListener('input', () => {
+        if (lockValue) {
+          slider.value = lastValue;
+          return;
+        }
+        lastValue = clampSliderValue(slider.value, min, max, step);
+        slider.value = lastValue;
+        onValueChange(lastValue);
+      });
+
+      slider.addEventListener('pointerup', finishDrag);
+      slider.addEventListener('pointercancel', finishDrag);
+
+      return {
+        setValue: (value) => applyValue(value),
+        stepBy: (delta) => applyValue(lastValue + delta * step)
+      };
+    }
+
+    function bindStepperButtons(decBtn, incBtn, controller, { min, max }) {
+      const syncDisabled = (value) => {
+        decBtn.disabled = value <= min;
+        incBtn.disabled = value >= max;
+      };
+
+      decBtn.setAttribute('aria-label', t('decrease'));
+      incBtn.setAttribute('aria-label', t('increase'));
+
+      decBtn.addEventListener('click', () => {
+        const next = controller.stepBy(-1);
+        syncDisabled(next);
+      });
+
+      incBtn.addEventListener('click', () => {
+        const next = controller.stepBy(1);
+        syncDisabled(next);
+      });
+
+      return { syncDisabled };
     }
 
     function resolveSegmentLabel(segment) {
@@ -1243,9 +1416,21 @@
         intervals: designerDraft.cycles * designerDraft.segments.length
       });
       cyclesVal.textContent = t('cyclesCount', { n: designerDraft.cycles });
-      cyclesInput.value = designerDraft.cycles;
-      pitchNormalInput.value = designerDraft.audio.pitchNormal;
-      pitchHeavyInput.value = designerDraft.audio.pitchHeavy;
+      if (typeof cyclesSliderCtrl !== 'undefined') {
+        cyclesSliderCtrl.setValue(designerDraft.cycles, false);
+        cyclesSteppers.syncDisabled(designerDraft.cycles);
+      } else {
+        cyclesInput.value = designerDraft.cycles;
+      }
+      if (typeof pitchNormalSliderCtrl !== 'undefined') {
+        pitchNormalSliderCtrl.setValue(designerDraft.audio.pitchNormal, false);
+        pitchNormalSteppers.syncDisabled(designerDraft.audio.pitchNormal);
+        pitchHeavySliderCtrl.setValue(designerDraft.audio.pitchHeavy, false);
+        pitchHeavySteppers.syncDisabled(designerDraft.audio.pitchHeavy);
+      } else {
+        pitchNormalInput.value = designerDraft.audio.pitchNormal;
+        pitchHeavyInput.value = designerDraft.audio.pitchHeavy;
+      }
       pitchNormalVal.textContent = formatHz(designerDraft.audio.pitchNormal);
       pitchHeavyVal.textContent = formatHz(designerDraft.audio.pitchHeavy);
     }
@@ -1282,11 +1467,17 @@
               </button>
             </div>
           </div>
-          <div class="flex justify-between mb-1">
+          <div class="flex justify-between items-center mb-1">
             <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('duration')}</span>
-            <span class="dur-val text-xs font-mono font-bold text-emerald-400">${formatSegmentDuration(seg.duration)}</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" class="dur-dec stepper-btn" aria-label="${t('decrease')}">−</button>
+              <span class="dur-val text-xs font-mono font-bold text-emerald-400 min-w-[3rem] text-center">${formatSegmentDuration(seg.duration)}</span>
+              <button type="button" class="dur-inc stepper-btn" aria-label="${t('increase')}">+</button>
+            </div>
           </div>
-          <input type="range" class="dur-slider w-full accent-emerald-500 bg-neutral-800 h-2 rounded-lg appearance-none cursor-pointer" min="${durMin}" max="${durMax}" value="${seg.duration}">
+          <div class="range-slider-wrap">
+            <input type="range" class="dur-slider range-slider" min="${durMin}" max="${durMax}" step="1" value="${seg.duration}">
+          </div>
           <div class="mt-2">
             <input type="text" class="label-input w-full px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-xs text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-emerald-500/30" placeholder="${t('optionalLabel')}" value="${seg.label || ''}" maxlength="30">
           </div>
@@ -1328,11 +1519,21 @@
 
         const slider = row.querySelector('.dur-slider');
         const durVal = row.querySelector('.dur-val');
-        slider.addEventListener('input', () => {
-          seg.duration = parseInt(slider.value, 10);
-          durVal.textContent = formatSegmentDuration(seg.duration);
-          updateDesignerSummary();
+        const durDec = row.querySelector('.dur-dec');
+        const durInc = row.querySelector('.dur-inc');
+        const durController = bindTouchFriendlySlider(slider, {
+          min: durMin,
+          max: durMax,
+          step: 1,
+          onValueChange: (value) => {
+            seg.duration = value;
+            durVal.textContent = formatSegmentDuration(value);
+            updateDesignerSummary();
+            durSteppers.syncDisabled(value);
+          }
         });
+        const durSteppers = bindStepperButtons(durDec, durInc, durController, { min: durMin, max: durMax });
+        durSteppers.syncDisabled(seg.duration);
 
         const labelInput = row.querySelector('.label-input');
         labelInput.addEventListener('input', () => {
@@ -1371,20 +1572,48 @@
       renderDesigner();
     });
 
-    cyclesInput.addEventListener('input', () => {
-      designerDraft.cycles = parseInt(cyclesInput.value, 10);
-      updateDesignerSummary();
-    });
+    const cyclesDecBtn = document.getElementById('cyclesDecBtn');
+    const cyclesIncBtn = document.getElementById('cyclesIncBtn');
+    const pitchNormalDecBtn = document.getElementById('pitchNormalDecBtn');
+    const pitchNormalIncBtn = document.getElementById('pitchNormalIncBtn');
+    const pitchHeavyDecBtn = document.getElementById('pitchHeavyDecBtn');
+    const pitchHeavyIncBtn = document.getElementById('pitchHeavyIncBtn');
 
-    pitchNormalInput.addEventListener('input', () => {
-      designerDraft.audio.pitchNormal = parseInt(pitchNormalInput.value, 10);
-      pitchNormalVal.textContent = formatHz(designerDraft.audio.pitchNormal);
+    const cyclesSliderCtrl = bindTouchFriendlySlider(cyclesInput, {
+      min: 1,
+      max: 100,
+      step: 1,
+      onValueChange: (value) => {
+        designerDraft.cycles = value;
+        updateDesignerSummary();
+        cyclesSteppers.syncDisabled(value);
+      }
     });
+    const cyclesSteppers = bindStepperButtons(cyclesDecBtn, cyclesIncBtn, cyclesSliderCtrl, { min: 1, max: 100 });
 
-    pitchHeavyInput.addEventListener('input', () => {
-      designerDraft.audio.pitchHeavy = parseInt(pitchHeavyInput.value, 10);
-      pitchHeavyVal.textContent = formatHz(designerDraft.audio.pitchHeavy);
+    const pitchNormalSliderCtrl = bindTouchFriendlySlider(pitchNormalInput, {
+      min: 400,
+      max: 1800,
+      step: 50,
+      onValueChange: (value) => {
+        designerDraft.audio.pitchNormal = value;
+        pitchNormalVal.textContent = formatHz(value);
+        pitchNormalSteppers.syncDisabled(value);
+      }
     });
+    const pitchNormalSteppers = bindStepperButtons(pitchNormalDecBtn, pitchNormalIncBtn, pitchNormalSliderCtrl, { min: 400, max: 1800 });
+
+    const pitchHeavySliderCtrl = bindTouchFriendlySlider(pitchHeavyInput, {
+      min: 400,
+      max: 2200,
+      step: 50,
+      onValueChange: (value) => {
+        designerDraft.audio.pitchHeavy = value;
+        pitchHeavyVal.textContent = formatHz(value);
+        pitchHeavySteppers.syncDisabled(value);
+      }
+    });
+    const pitchHeavySteppers = bindStepperButtons(pitchHeavyDecBtn, pitchHeavyIncBtn, pitchHeavySliderCtrl, { min: 400, max: 2200 });
 
     function validateAndSavePreset() {
       if (!designerDraft) return;
