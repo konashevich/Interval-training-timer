@@ -580,6 +580,9 @@
         work: 'Work',
         rest: 'Rest',
         duration: 'Duration',
+        pace: 'Pace',
+        previewPace: 'Preview tick pace',
+        paceMultiplier: '{n}×',
         optionalLabel: 'Optional label (e.g. Sprint)',
         moveUp: 'Move up',
         moveDown: 'Move down',
@@ -695,6 +698,9 @@
         work: 'Робота',
         rest: 'Відпочинок',
         duration: 'Тривалість',
+        pace: 'Темп',
+        previewPace: 'Прослухати темп',
+        paceMultiplier: '{n}×',
         optionalLabel: 'Необов\'язкова мітка (напр. Спринт)',
         moveUp: 'Перемістити вгору',
         moveDown: 'Перемістити вниз',
@@ -840,8 +846,41 @@
       return crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2);
     }
 
+    const PACE_MIN = 0.25;
+    const PACE_MAX = 4;
+    const PACE_STEP = 0.25;
+    const PACE_DEFAULT = 1;
+
     function createSegment(kind, duration, label) {
-      return { id: generateId(), kind, duration, label: label || '' };
+      return { id: generateId(), kind, duration, pace: PACE_DEFAULT, label: label || '' };
+    }
+
+    function normalizeSegment(seg) {
+      if (!seg.pace || seg.pace < PACE_MIN) seg.pace = PACE_DEFAULT;
+      seg.pace = clampSliderValue(seg.pace, PACE_MIN, PACE_MAX, PACE_STEP);
+      return seg;
+    }
+
+    function normalizePreset(preset) {
+      preset.segments = preset.segments.map(s => normalizeSegment({ ...s }));
+      return preset;
+    }
+
+    function getSegmentPace(seg) {
+      return seg && seg.pace ? seg.pace : PACE_DEFAULT;
+    }
+
+    function getSegmentTickMs(seg) {
+      return Math.round(1000 / getSegmentPace(seg));
+    }
+
+    function getSegmentRealSeconds(seg) {
+      if (!seg || seg.duration <= 0) return 0;
+      return seg.duration / getSegmentPace(seg);
+    }
+
+    function formatPace(pace) {
+      return t('paceMultiplier', { n: parseFloat(Number(pace).toFixed(2)) });
     }
 
     function createDefaultPreset() {
@@ -889,6 +928,7 @@
           return appStore;
         }
         appStore = data;
+        appStore.presets = appStore.presets.map(normalizePreset);
         return appStore;
       } catch (e) {
         console.warn('Corrupt storage, resetting.', e);
@@ -1058,8 +1098,8 @@
     }
 
     function getPresetTotalSeconds(preset) {
-      const segTotal = preset.segments.reduce((sum, seg) => sum + seg.duration, 0);
-      return segTotal * preset.cycles;
+      const segTotal = preset.segments.reduce((sum, seg) => sum + getSegmentRealSeconds(seg), 0);
+      return Math.round(segTotal * preset.cycles);
     }
 
     function getPresetSubtitle(preset) {
@@ -1090,6 +1130,7 @@
     let transitionTimeoutId = null;
     let transitionPending = false;
     let completionBeepIds = [];
+    let pacePreviewIds = [];
 
     // =========================================================================
     // --- DOM Elements ---
@@ -1394,7 +1435,7 @@
 
     function loadDesignerFromPreset(preset) {
       designerDraft = {
-        segments: preset.segments.map(s => ({ ...s, id: s.id || generateId() })),
+        segments: preset.segments.map(s => normalizeSegment({ ...s, id: s.id || generateId() })),
         cycles: preset.cycles,
         audio: { ...preset.audio }
       };
@@ -1407,8 +1448,8 @@
 
     function updateDesignerSummary() {
       if (!designerDraft) return;
-      const segTotal = designerDraft.segments.reduce((sum, s) => sum + s.duration, 0);
-      const total = segTotal * designerDraft.cycles;
+      const segTotal = designerDraft.segments.reduce((sum, s) => sum + getSegmentRealSeconds(s), 0);
+      const total = Math.round(segTotal * designerDraft.cycles);
       designerTotalDuration.textContent = formatDuration(total);
       designerCycleSummary.textContent = t('cycleSummary', {
         cycles: designerDraft.cycles,
@@ -1437,9 +1478,11 @@
 
     function renderDesigner() {
       if (!designerDraft) resetDesignerForm();
+      stopPacePreview();
       segmentList.innerHTML = '';
 
       designerDraft.segments.forEach((seg, index) => {
+        normalizeSegment(seg);
         const row = document.createElement('div');
         row.className = 'segment-row p-3 rounded-xl bg-neutral-900 border border-neutral-800';
         row.dataset.segmentId = seg.id;
@@ -1477,6 +1520,22 @@
           </div>
           <div class="range-slider-wrap">
             <input type="range" class="dur-slider range-slider" min="${durMin}" max="${durMax}" step="1" value="${seg.duration}">
+          </div>
+          <div class="mt-3 pt-3 border-t border-neutral-800/80">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('pace')}</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" class="pace-dec stepper-btn" aria-label="${t('decrease')}">−</button>
+                <span class="pace-val text-xs font-mono font-bold text-sky-400 min-w-[3rem] text-center">${formatPace(seg.pace)}</span>
+                <button type="button" class="pace-inc stepper-btn" aria-label="${t('increase')}">+</button>
+                <button type="button" class="pace-preview-btn p-1.5 rounded-lg text-neutral-400 hover:text-sky-300 hover:bg-sky-500/10 transition-colors" aria-label="${t('previewPace')}" title="${t('previewPace')}">
+                  <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+            <div class="range-slider-wrap">
+              <input type="range" class="pace-slider range-slider" min="${PACE_MIN}" max="${PACE_MAX}" step="${PACE_STEP}" value="${seg.pace}">
+            </div>
           </div>
           <div class="mt-2">
             <input type="text" class="label-input w-full px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-xs text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-emerald-500/30" placeholder="${t('optionalLabel')}" value="${seg.label || ''}" maxlength="30">
@@ -1534,6 +1593,29 @@
         });
         const durSteppers = bindStepperButtons(durDec, durInc, durController, { min: durMin, max: durMax });
         durSteppers.syncDisabled(seg.duration);
+
+        const paceSlider = row.querySelector('.pace-slider');
+        const paceVal = row.querySelector('.pace-val');
+        const paceDec = row.querySelector('.pace-dec');
+        const paceInc = row.querySelector('.pace-inc');
+        const pacePreviewBtn = row.querySelector('.pace-preview-btn');
+        const paceController = bindTouchFriendlySlider(paceSlider, {
+          min: PACE_MIN,
+          max: PACE_MAX,
+          step: PACE_STEP,
+          onValueChange: (value) => {
+            seg.pace = value;
+            paceVal.textContent = formatPace(value);
+            updateDesignerSummary();
+            paceSteppers.syncDisabled(value);
+          }
+        });
+        const paceSteppers = bindStepperButtons(paceDec, paceInc, paceController, { min: PACE_MIN, max: PACE_MAX });
+        paceSteppers.syncDisabled(seg.pace);
+
+        pacePreviewBtn.addEventListener('click', () => {
+          previewSegmentPace(seg, pacePreviewBtn);
+        });
 
         const labelInput = row.querySelector('.label-input');
         labelInput.addEventListener('input', () => {
@@ -1647,7 +1729,7 @@
         isDefault: presetDefaultCheckbox.checked,
         createdAt: designerEditId ? getPresetById(designerEditId).createdAt : now,
         updatedAt: now,
-        segments: designerDraft.segments.map(s => ({ ...s })),
+        segments: designerDraft.segments.map(s => normalizeSegment({ ...s })),
         cycles: designerDraft.cycles,
         audio: { ...designerDraft.audio }
       };
@@ -1765,6 +1847,21 @@
       return activePreset ? activePreset.audio.pitchHeavy : 1200;
     }
 
+    function getCurrentTickMs() {
+      const seg = getCurrentSegment();
+      return seg ? getSegmentTickMs(seg) : 1000;
+    }
+
+    function restartTickInterval() {
+      if (timerState.intervalId != null) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+      }
+      if (timerState.isRunning && !transitionPending) {
+        timerState.intervalId = setInterval(processSecondTick, getCurrentTickMs());
+      }
+    }
+
     function getFirstActiveSegment() {
       if (!activePreset) return null;
       for (let i = 0; i < activePreset.segments.length; i++) {
@@ -1788,7 +1885,7 @@
 
     function loadPresetOnMain(preset, showNotification) {
       if (timerState.isRunning) pauseTimer();
-      activePreset = JSON.parse(JSON.stringify(preset));
+      activePreset = JSON.parse(JSON.stringify(normalizePreset(preset)));
       timerState = buildInitialRuntime(activePreset);
       appStore.activePresetId = preset.id;
       saveStore(appStore);
@@ -1826,6 +1923,7 @@
           playBeepTone(getPitchNormal(), 0.12, false);
           triggerFlash('light');
         }
+        restartTickInterval();
         updateUI();
         return;
       }
@@ -1846,6 +1944,7 @@
             playBeepTone(getPitchNormal(), 0.12, false);
             triggerFlash('light');
           }
+          restartTickInterval();
           updateUI();
           return;
         }
@@ -1984,7 +2083,7 @@
           playBeepTone(getPitchHeavy(), 0.45, true);
           triggerFlash('heavy');
           timerState.currentSecond = 0;
-          scheduleSegmentTransition(1000);
+          scheduleSegmentTransition(getCurrentTickMs());
           updateUI();
           return;
         } else {
@@ -2046,7 +2145,7 @@
       timerState.isRunning = true;
       togglePlayButtonIcon(true);
       audioAlert.classList.add('hidden');
-      timerState.intervalId = setInterval(processSecondTick, 1000);
+      restartTickInterval();
       updateUI();
     }
 
@@ -2107,7 +2206,7 @@
       return audioCtx;
     }
 
-    function playBeepTone(frequency, duration = 0.15, isHeavy = false) {
+    function playBeepTone(frequency, duration = 0.15, isHeavy = false, peakGain = null) {
       try {
         const ctx = getAudioContext();
         if (!ctx) return;
@@ -2129,9 +2228,10 @@
           subOsc.connect(subGain);
           subGain.connect(ctx.destination);
 
-          gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+          const mainGain = peakGain != null ? peakGain : 0.4;
+          gainNode.gain.setValueAtTime(mainGain, ctx.currentTime);
           gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-          subGain.gain.setValueAtTime(0.5, ctx.currentTime);
+          subGain.gain.setValueAtTime(mainGain + 0.1, ctx.currentTime);
           subGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
           subOsc.start();
@@ -2139,7 +2239,8 @@
         } else {
           osc.type = 'sine';
           osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-          gainNode.gain.setValueAtTime(0.35, ctx.currentTime);
+          const mainGain = peakGain != null ? peakGain : 0.35;
+          gainNode.gain.setValueAtTime(mainGain, ctx.currentTime);
           gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
         }
 
@@ -2148,6 +2249,49 @@
       } catch (e) {
         console.warn('Audio playback restrictions active.', e);
       }
+    }
+
+    function stopPacePreview() {
+      pacePreviewIds.forEach(id => clearTimeout(id));
+      pacePreviewIds = [];
+      document.querySelectorAll('.pace-preview-btn.is-previewing').forEach(btn => {
+        btn.classList.remove('is-previewing', 'text-sky-300', 'bg-sky-500/10');
+        btn.classList.add('text-neutral-400');
+      });
+    }
+
+    function previewSegmentPace(seg, previewBtn) {
+      stopPacePreview();
+      getAudioContext();
+
+      const tickMs = getSegmentTickMs(seg);
+      const pitch = designerDraft?.audio?.pitchNormal ?? 800;
+      const tickCount = 4;
+      const totalMs = tickMs * tickCount;
+
+      if (previewBtn) {
+        previewBtn.classList.add('is-previewing', 'text-sky-300', 'bg-sky-500/10');
+        previewBtn.classList.remove('text-neutral-400');
+      }
+
+      for (let i = 0; i < tickCount; i++) {
+        const id = setTimeout(() => {
+          if (seg.kind === 'work') {
+            playBeepTone(pitch, 0.12, false);
+          } else {
+            playBeepTone(520, 0.08, false, 0.14);
+          }
+        }, i * tickMs);
+        pacePreviewIds.push(id);
+      }
+
+      const doneId = setTimeout(() => {
+        if (previewBtn) {
+          previewBtn.classList.remove('is-previewing', 'text-sky-300', 'bg-sky-500/10');
+          previewBtn.classList.add('text-neutral-400');
+        }
+      }, totalMs + 50);
+      pacePreviewIds.push(doneId);
     }
 
     function triggerFlash(intensity = 'light') {
