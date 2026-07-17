@@ -132,6 +132,7 @@
     }
     .pb-safe { padding-bottom: var(--tab-bar-inset); }
     #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
+    #updateBanner { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
     #appShell { padding-bottom: var(--tab-bar-inset); }
     .range-slider-wrap {
       padding: 0.625rem 0;
@@ -410,6 +411,12 @@
   </div>
 
   <!-- Bottom Tab Bar -->
+  <div id="updateBanner" class="fixed left-1/2 -translate-x-1/2 z-50 hidden max-w-sm w-[calc(100%-2rem)]">
+    <div class="bg-neutral-900 border border-emerald-500/30 text-neutral-200 px-4 py-3 rounded-2xl text-xs font-semibold shadow-2xl flex items-center gap-3">
+      <span id="updateBannerText" class="flex-1" data-i18n="updateAvailable">Update available</span>
+      <button id="updateRefreshBtn" type="button" class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold transition-colors active:scale-95" data-i18n="updateRefresh">Refresh</button>
+    </div>
+  </div>
   <nav id="tabBar" class="fixed bottom-0 inset-x-0 z-40 bg-neutral-950/90 backdrop-blur-md border-t border-neutral-800" style="padding-bottom: env(safe-area-inset-bottom, 0px);">
     <div class="max-w-md mx-auto flex items-end justify-around px-6 pt-1 pb-2">
       <button data-tab="designer" class="tab-btn tab-btn-side flex flex-col items-center gap-0.5 flex-1 py-2 text-neutral-500 transition-colors">
@@ -519,11 +526,11 @@
           </div>
           <div class="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3">
             <dt class="text-[10px] font-extrabold uppercase tracking-widest text-neutral-500 mb-1" data-i18n="feedback">Feedback</dt>
-            <dd><a href="https://t.me/oleksiiko" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-emerald-400 hover:text-emerald-300">@oleksiiko</a></dd>
+            <dd><a href="https://t.me/oleksiiko" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-emerald-400 hover:text-emerald-300" data-i18n="feedbackTelegram">telegram: @oleksiiko</a></dd>
           </div>
           <div class="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3">
             <dt class="text-[10px] font-extrabold uppercase tracking-widest text-neutral-500 mb-1" data-i18n="aboutVersion">Version</dt>
-            <dd class="text-sm font-semibold text-white" id="aboutVersionValue">1.0.0</dd>
+            <dd class="text-sm font-semibold text-white" id="aboutVersionValue">1.1.0</dd>
           </div>
         </dl>
       </div>
@@ -644,6 +651,9 @@
         installApp: 'Install app',
         about: 'About',
         feedback: 'Feedback',
+        feedbackTelegram: 'telegram: @oleksiiko',
+        updateAvailable: 'Update available',
+        updateRefresh: 'Refresh',
         installTitle: 'Install Interval Training Timer',
         installBody: 'Add to your home screen for fullscreen access and quick launch — works offline after your first visit.',
         installBtn: 'Install',
@@ -762,6 +772,9 @@
         installApp: 'Встановити застосунок',
         about: 'Про застосунок',
         feedback: 'Зворотний зв\'язок',
+        feedbackTelegram: 'telegram: @oleksiiko',
+        updateAvailable: 'Доступне оновлення',
+        updateRefresh: 'Оновити',
         installTitle: 'Встановити таймер інтервального тренування',
         installBody: 'Додайте на головний екран для повноекранного режиму та швидкого запуску — працює офлайн після першого відвідування.',
         installBtn: 'Встановити',
@@ -2129,9 +2142,10 @@
       getAudioContext();
       requestWakeLock();
 
-      if (timerState.currentPhase === 'idle') {
+      if (timerState.currentPhase === 'idle' || timerState.currentPhase === 'completed') {
         const first = getFirstActiveSegment();
         if (first) {
+          timerState.cycleIndex = 1;
           timerState.segmentIndex = first.index;
           timerState.currentSecond = first.segment.duration;
           timerState.currentPhase = 'active';
@@ -2346,11 +2360,13 @@
     // --- PWA: install prompt & settings ---
     // =========================================================================
 
-    const APP_VERSION = '1.0.0';
+    const APP_VERSION = '1.1.0';
     const PWA_PREFS_KEY = 'pwa_install_prefs';
     const PWA_ASK_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
     let deferredInstallPrompt = null;
+    let swRegistration = null;
+    let updateBannerShown = false;
 
     const installModal = document.getElementById('installModal');
     const installModalBackdrop = document.getElementById('installModalBackdrop');
@@ -2369,6 +2385,8 @@
     const settingsInstallBtn = document.getElementById('settingsInstallBtn');
     const settingsAboutBtn = document.getElementById('settingsAboutBtn');
     const aboutVersionValue = document.getElementById('aboutVersionValue');
+    const updateBanner = document.getElementById('updateBanner');
+    const updateRefreshBtn = document.getElementById('updateRefreshBtn');
 
     function isMobileDevice() {
       return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -2523,11 +2541,73 @@
       setTimeout(() => showInstallModal(false), 600);
     }
 
+    function showUpdateBanner() {
+      if (updateBannerShown || !updateBanner) return;
+      if (sessionStorage.getItem('sw-update-reloading') === '1') return;
+      updateBannerShown = true;
+      updateBanner.classList.remove('hidden');
+    }
+
+    function hideUpdateBanner() {
+      updateBannerShown = false;
+      if (updateBanner) updateBanner.classList.add('hidden');
+    }
+
+    function refreshForUpdate() {
+      sessionStorage.setItem('sw-update-reloading', '1');
+      location.reload();
+    }
+
+    function trackServiceWorker(worker) {
+      if (!worker) return;
+      worker.addEventListener('statechange', () => {
+        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner();
+        }
+      });
+    }
+
+    async function checkForServiceWorkerUpdate() {
+      if (!swRegistration) return;
+      try {
+        await swRegistration.update();
+      } catch (err) {
+        console.warn('Service worker update check failed:', err);
+      }
+    }
+
     function registerServiceWorker() {
       if (!('serviceWorker' in navigator)) return;
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
+
+      if (sessionStorage.getItem('sw-update-reloading') === '1') {
+        sessionStorage.removeItem('sw-update-reloading');
+      }
+
+      navigator.serviceWorker.register('/sw.js').then((registration) => {
+        swRegistration = registration;
+
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          showUpdateBanner();
+        }
+
+        trackServiceWorker(registration.installing);
+        registration.addEventListener('updatefound', () => {
+          trackServiceWorker(registration.installing);
+        });
+
+        checkForServiceWorkerUpdate();
+      }).catch((err) => {
         console.warn('Service worker registration failed:', err);
       });
+
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (sessionStorage.getItem('sw-update-reloading') === '1') return;
+        showUpdateBanner();
+      });
+    }
+
+    if (updateRefreshBtn) {
+      updateRefreshBtn.addEventListener('click', refreshForUpdate);
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -2613,7 +2693,10 @@
       if (wakeLock !== null && document.visibilityState === 'visible') {
         requestWakeLock();
       }
-      if (document.visibilityState === 'visible') updateViewportLayout();
+      if (document.visibilityState === 'visible') {
+        updateViewportLayout();
+        checkForServiceWorkerUpdate();
+      }
     });
 
     window.addEventListener('resize', updateViewportLayout);

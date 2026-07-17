@@ -1,4 +1,5 @@
-const CACHE_NAME = 'interval-timer-v8';
+// Deploy: bump CACHE_NAME here AND APP_VERSION in index.html
+const CACHE_NAME = 'interval-timer-v9';
 
 const PRECACHE_URLS = [
   '/',
@@ -45,6 +46,35 @@ function isCdnRequest(url) {
   return CDN_PATTERNS.some((pattern) => pattern.test(url.href));
 }
 
+function isAppShellRequest(url) {
+  if (url.origin !== self.location.origin) return false;
+  const path = url.pathname;
+  return path === '/' || path === '/index.html';
+}
+
+function cacheFirstWithNetworkUpdate(request) {
+  return caches.match(request).then((cached) => {
+    const networkFetch = fetch(request).then((response) => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+      }
+      return response;
+    }).catch(() => cached);
+    return cached || networkFetch;
+  });
+}
+
+function networkFirstWithCacheFallback(request) {
+  return fetch(request).then((response) => {
+    if (response.ok) {
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+    }
+    return response;
+  }).catch(() => caches.match(request).then((cached) => cached || Response.error()));
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
@@ -68,17 +98,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
-        const networkFetch = fetch(event.request).then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        }).catch(() => cached);
-        return cached || networkFetch;
-      })
-    );
+    if (isAppShellRequest(url)) {
+      event.respondWith(networkFirstWithCacheFallback(event.request));
+    } else {
+      event.respondWith(cacheFirstWithNetworkUpdate(event.request));
+    }
   }
 });
