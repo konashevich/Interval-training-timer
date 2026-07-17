@@ -319,6 +319,10 @@
             + Rest
           </button>
         </div>
+        <button id="previewPatternBtn" type="button" class="mt-2 w-full py-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-300 text-xs font-bold uppercase tracking-wider hover:bg-sky-500/20 transition-colors active:scale-98 flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-3.5 h-3.5"></i>
+          <span data-i18n="previewPattern">Preview pattern</span>
+        </button>
       </div>
 
       <!-- Cycles -->
@@ -597,7 +601,9 @@
         rest: 'Rest',
         duration: 'Duration',
         pace: 'Pace',
-        previewPace: 'Preview tick pace',
+        previewPace: 'Preview block',
+        previewPattern: 'Preview pattern',
+        stopPreview: 'Stop preview',
         paceMultiplier: '{n}×',
         optionalLabel: 'Optional label (e.g. Sprint)',
         moveUp: 'Move up',
@@ -721,7 +727,9 @@
         rest: 'Відпочинок',
         duration: 'Тривалість',
         pace: 'Темп',
-        previewPace: 'Прослухати темп',
+        previewPace: 'Прослухати блок',
+        previewPattern: 'Прослухати патерн',
+        stopPreview: 'Зупинити',
         paceMultiplier: '{n}×',
         optionalLabel: 'Необов\'язкова мітка (напр. Спринт)',
         moveUp: 'Перемістити вгору',
@@ -1725,6 +1733,10 @@
       renderDesigner();
     });
 
+    document.getElementById('previewPatternBtn').addEventListener('click', () => {
+      previewDesignerPattern();
+    });
+
     const cyclesDecBtn = document.getElementById('cyclesDecBtn');
     const cyclesIncBtn = document.getElementById('cyclesIncBtn');
     const pitchNormalDecBtn = document.getElementById('pitchNormalDecBtn');
@@ -2332,44 +2344,132 @@
     function stopPacePreview() {
       pacePreviewIds.forEach(id => clearTimeout(id));
       pacePreviewIds = [];
+
       document.querySelectorAll('.pace-preview-btn.is-previewing').forEach(btn => {
         btn.classList.remove('is-previewing', 'text-sky-300', 'bg-sky-500/10');
         btn.classList.add('text-neutral-400');
+        btn.setAttribute('aria-label', t('previewPace'));
+        btn.title = t('previewPace');
+        const icon = btn.querySelector('[data-lucide]');
+        if (icon) {
+          icon.setAttribute('data-lucide', 'volume-2');
+        }
       });
+
+      const patternBtn = document.getElementById('previewPatternBtn');
+      if (patternBtn) {
+        patternBtn.classList.remove('is-previewing', 'border-rose-500/40', 'bg-rose-500/10', 'text-rose-300');
+        patternBtn.classList.add('border-sky-500/30', 'bg-sky-500/10', 'text-sky-300');
+        const label = patternBtn.querySelector('[data-i18n="previewPattern"], [data-i18n="stopPreview"]');
+        if (label) {
+          label.dataset.i18n = 'previewPattern';
+          label.textContent = t('previewPattern');
+        }
+        const icon = patternBtn.querySelector('[data-lucide]');
+        if (icon) icon.setAttribute('data-lucide', 'play');
+      }
+
+      lucide.createIcons();
     }
 
-    function previewSegmentPace(seg, previewBtn) {
+    function buildSegmentPreviewEvents(seg, audio, startAtMs) {
+      const events = [];
+      if (!seg || seg.duration <= 0) return { events, endAtMs: startAtMs };
+
+      const tickMs = getSegmentTickMs(seg);
+      const pitchNormal = audio?.pitchNormal ?? 800;
+      const pitchHeavy = audio?.pitchHeavy ?? 1200;
+      let at = startAtMs;
+
+      if (seg.kind === 'work') {
+        for (let remaining = seg.duration; remaining >= 1; remaining--) {
+          if (remaining > 1) {
+            events.push({ atMs: at, type: 'normal', pitch: pitchNormal });
+          } else {
+            events.push({ atMs: at, type: 'heavy', pitch: pitchHeavy });
+          }
+          at += tickMs;
+        }
+      } else {
+        for (let remaining = seg.duration; remaining >= 1; remaining--) {
+          events.push({ atMs: at, type: 'rest', pitch: 520 });
+          at += tickMs;
+        }
+      }
+
+      return { events, endAtMs: at };
+    }
+
+    function runDesignerPreview(events, activeBtn, { isPattern = false } = {}) {
       stopPacePreview();
       getAudioContext();
 
-      const tickMs = getSegmentTickMs(seg);
-      const pitch = designerDraft?.audio?.pitchNormal ?? 800;
-      const tickCount = 4;
-      const totalMs = tickMs * tickCount;
+      if (!events.length) return;
 
-      if (previewBtn) {
-        previewBtn.classList.add('is-previewing', 'text-sky-300', 'bg-sky-500/10');
-        previewBtn.classList.remove('text-neutral-400');
-      }
-
-      for (let i = 0; i < tickCount; i++) {
-        const id = setTimeout(() => {
-          if (seg.kind === 'work') {
-            playBeepTone(pitch, 0.12, false);
-          } else {
-            playBeepTone(520, 0.08, false, 0.14);
+      if (activeBtn) {
+        activeBtn.classList.add('is-previewing');
+        if (isPattern) {
+          activeBtn.classList.remove('border-sky-500/30', 'bg-sky-500/10', 'text-sky-300');
+          activeBtn.classList.add('border-rose-500/40', 'bg-rose-500/10', 'text-rose-300');
+          const label = activeBtn.querySelector('[data-i18n="previewPattern"], [data-i18n="stopPreview"]');
+          if (label) {
+            label.dataset.i18n = 'stopPreview';
+            label.textContent = t('stopPreview');
           }
-        }, i * tickMs);
-        pacePreviewIds.push(id);
+          const icon = activeBtn.querySelector('[data-lucide]');
+          if (icon) icon.setAttribute('data-lucide', 'square');
+        } else {
+          activeBtn.classList.add('text-sky-300', 'bg-sky-500/10');
+          activeBtn.classList.remove('text-neutral-400');
+          activeBtn.setAttribute('aria-label', t('stopPreview'));
+          activeBtn.title = t('stopPreview');
+          const icon = activeBtn.querySelector('[data-lucide]');
+          if (icon) icon.setAttribute('data-lucide', 'square');
+        }
+        lucide.createIcons();
       }
 
-      const doneId = setTimeout(() => {
-        if (previewBtn) {
-          previewBtn.classList.remove('is-previewing', 'text-sky-300', 'bg-sky-500/10');
-          previewBtn.classList.add('text-neutral-400');
-        }
-      }, totalMs + 50);
+      events.forEach((ev) => {
+        const id = setTimeout(() => {
+          if (ev.type === 'heavy') playBeepTone(ev.pitch, 0.45, true);
+          else if (ev.type === 'rest') playBeepTone(ev.pitch, 0.08, false, 0.14);
+          else playBeepTone(ev.pitch, 0.12, false);
+        }, ev.atMs);
+        pacePreviewIds.push(id);
+      });
+
+      const endAt = events[events.length - 1].atMs + 500;
+      const doneId = setTimeout(() => stopPacePreview(), endAt);
       pacePreviewIds.push(doneId);
+    }
+
+    function previewSegmentPace(seg, previewBtn) {
+      if (previewBtn && previewBtn.classList.contains('is-previewing')) {
+        stopPacePreview();
+        return;
+      }
+
+      const { events } = buildSegmentPreviewEvents(seg, designerDraft?.audio, 0);
+      runDesignerPreview(events, previewBtn, { isPattern: false });
+    }
+
+    function previewDesignerPattern() {
+      const patternBtn = document.getElementById('previewPatternBtn');
+      if (patternBtn && patternBtn.classList.contains('is-previewing')) {
+        stopPacePreview();
+        return;
+      }
+      if (!designerDraft || !designerDraft.segments.length) return;
+
+      let cursor = 0;
+      const events = [];
+      designerDraft.segments.forEach((seg) => {
+        const built = buildSegmentPreviewEvents(seg, designerDraft.audio, cursor);
+        events.push(...built.events);
+        cursor = built.endAtMs;
+      });
+
+      runDesignerPreview(events, patternBtn, { isPattern: true });
     }
 
     function triggerFlash(intensity = 'light') {
