@@ -278,17 +278,17 @@
 
     <!-- DESIGNER TAB -->
     <div id="tabDesigner" class="tab-panel flex-1 flex-col px-6 pb-safe overflow-y-auto">
-      <div class="flex justify-between items-center mb-4 pt-2">
-        <div class="flex items-center gap-2">
-          <i data-lucide="pen-tool" class="w-5 h-5 text-emerald-400"></i>
-          <h2 class="text-lg font-bold tracking-tight text-white" data-i18n="trainingDesigner">Training Designer</h2>
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-4 pt-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <i data-lucide="pen-tool" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+          <h2 class="text-base sm:text-lg font-bold tracking-tight text-white truncate" data-i18n="trainingDesigner">Training Designer</h2>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button id="cloneTrainingBtn" type="button" hidden class="inline-flex text-xs font-bold uppercase tracking-wider text-sky-300 hover:text-sky-200 px-3 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 transition-colors active:scale-95 items-center gap-1.5">
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+          <button id="cloneTrainingBtn" type="button" hidden class="inline-flex text-xs font-bold uppercase tracking-wider text-sky-300 hover:text-sky-200 px-2.5 sm:px-3 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 transition-colors active:scale-95 items-center gap-1.5">
             <i data-lucide="copy" class="w-3.5 h-3.5"></i>
             <span data-i18n="cloneBtn">Clone</span>
           </button>
-          <button id="newTrainingBtn" type="button" class="text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 transition-colors active:scale-95" data-i18n="newBtn">
+          <button id="newTrainingBtn" type="button" class="text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 px-2.5 sm:px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 transition-colors active:scale-95" data-i18n="newBtn">
             + New
           </button>
         </div>
@@ -490,6 +490,25 @@
       </div>
 
       <div id="settingsListView" class="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+        <div class="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-4 py-4">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <i data-lucide="languages" class="w-5 h-5"></i>
+            </span>
+            <span class="text-sm font-semibold text-white" data-i18n="language">Language</span>
+          </div>
+          <div class="flex gap-2" id="languageGroup" role="group" aria-label="Language">
+            <button type="button" id="langSystemBtn" data-locale="system" class="lang-option flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-colors active:scale-[0.98]" data-i18n="languageSystem">
+              System
+            </button>
+            <button type="button" id="langEnBtn" data-locale="en" class="lang-option flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-colors active:scale-[0.98]">
+              English
+            </button>
+            <button type="button" id="langUkBtn" data-locale="uk" class="lang-option flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-colors active:scale-[0.98]">
+              Українська
+            </button>
+          </div>
+        </div>
         <button id="settingsInstallBtn" type="button" class="hidden w-full flex items-center gap-3 px-4 py-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-emerald-500/30 text-left transition-colors active:scale-[0.99]">
           <span class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
             <i data-lucide="download" class="w-5 h-5"></i>
@@ -672,6 +691,8 @@
         hz: '{n} Hz',
         secondsShort: '{n}s',
         settings: 'Settings',
+        language: 'Language',
+        languageSystem: 'System',
         installApp: 'Install app',
         about: 'About',
         feedback: 'Feedback',
@@ -801,6 +822,8 @@
         hz: '{n} Гц',
         secondsShort: '{n} с',
         settings: 'Налаштування',
+        language: 'Мова',
+        languageSystem: 'Система',
         installApp: 'Встановити застосунок',
         about: 'Про застосунок',
         feedback: 'Зворотний зв\'язок',
@@ -828,6 +851,7 @@
     };
 
     let currentLocale = 'en';
+    const LOCALE_STORAGE_KEY = 'app_locale';
 
     function detectLocale() {
       const langs = navigator.languages?.length
@@ -838,6 +862,70 @@
         if (code === 'uk' || code === 'ru') return 'uk';
       }
       return 'en';
+    }
+
+    function loadStoredLocale() {
+      try {
+        const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+        if (stored === 'en' || stored === 'uk') return stored;
+      } catch (e) {
+        // ignore
+      }
+      return null;
+    }
+
+    function resolveLocale() {
+      return loadStoredLocale() || detectLocale();
+    }
+
+    function updateLanguageButtons() {
+      const stored = loadStoredLocale();
+      const languageGroup = document.getElementById('languageGroup');
+      if (languageGroup) languageGroup.setAttribute('aria-label', t('language'));
+
+      document.querySelectorAll('.lang-option').forEach((btn) => {
+        const mode = btn.dataset.locale;
+        const selected = stored === null ? mode === 'system' : mode === stored;
+        btn.classList.toggle('border-emerald-500/50', selected);
+        btn.classList.toggle('bg-emerald-500/15', selected);
+        btn.classList.toggle('text-emerald-300', selected);
+        btn.classList.toggle('border-neutral-700', !selected);
+        btn.classList.toggle('bg-neutral-950', !selected);
+        btn.classList.toggle('text-neutral-300', !selected);
+        btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+    }
+
+    function setLocale(locale) {
+      if (locale !== 'en' && locale !== 'uk' && locale !== 'system') return;
+
+      const nextLocale = locale === 'system' ? detectLocale() : locale;
+      const storedBefore = loadStoredLocale();
+      const modeBefore = storedBefore === null ? 'system' : storedBefore;
+      if (locale === modeBefore && nextLocale === currentLocale) {
+        updateLanguageButtons();
+        return;
+      }
+
+      currentLocale = nextLocale;
+      try {
+        if (locale === 'system') localStorage.removeItem(LOCALE_STORAGE_KEY);
+        else localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+      } catch (e) {
+        // ignore
+      }
+      applyStaticI18n();
+      applyDynamicI18n();
+      updateLanguageButtons();
+      updateInstallModalHints();
+      if (!settingsOverlay.classList.contains('hidden')) {
+        if (!settingsAboutView.classList.contains('hidden')) {
+          settingsTitle.textContent = t('about');
+        } else {
+          settingsTitle.textContent = t('settings');
+        }
+      }
+      lucide.createIcons();
     }
 
     function t(key, vars) {
@@ -900,8 +988,10 @@
     const PACE_STEP = 0.25;
     const PACE_DEFAULT = 1;
 
-    function createSegment(kind, duration, label) {
-      return { id: generateId(), kind, duration, pace: PACE_DEFAULT, label: label || '' };
+    function createSegment(kind, duration, label, labelKey) {
+      const seg = { id: generateId(), kind, duration, pace: PACE_DEFAULT, label: label || '' };
+      if (labelKey) seg.labelKey = labelKey;
+      return seg;
     }
 
     function normalizeSegment(seg) {
@@ -1447,6 +1537,7 @@
 
     function populateTemplateDropdown() {
       if (!templatePresetSelect) return;
+      const previous = templatePresetSelect.value;
       templatePresetSelect.innerHTML = '';
       const placeholder = document.createElement('option');
       placeholder.value = '';
@@ -1458,7 +1549,20 @@
         opt.textContent = t(tmpl.nameKey);
         templatePresetSelect.appendChild(opt);
       });
-      templatePresetSelect.value = '';
+
+      const stillValid = previous && TRAINING_TEMPLATES.some(tmpl => tmpl.id === previous);
+      templatePresetSelect.value = stillValid ? previous : '';
+      if (stillValid) {
+        const tmpl = TRAINING_TEMPLATES.find(item => item.id === previous);
+        if (tmpl?.descKey && templatePresetDesc) {
+          templatePresetDesc.textContent = t(tmpl.descKey);
+          templatePresetDesc.classList.remove('hidden');
+        } else if (templatePresetDesc) {
+          templatePresetDesc.classList.add('hidden');
+        }
+      } else if (templatePresetDesc) {
+        templatePresetDesc.classList.add('hidden');
+      }
     }
 
     function resetTemplateSelect() {
@@ -1473,7 +1577,7 @@
       designerEditId = null;
       clearDesignerModified();
       designerDraft = {
-        segments: template.segments.map(s => createSegment(s.kind, s.duration, resolveSegmentLabel(s))),
+        segments: template.segments.map(s => createSegment(s.kind, s.duration, '', s.labelKey || null)),
         cycles: template.cycles,
         audio: { ...template.audio }
       };
@@ -1482,12 +1586,14 @@
       deletePresetBtn.classList.add('hidden');
       savePresetBtn.textContent = t('saveTraining');
 
+      if (templatePresetSelect) templatePresetSelect.value = template.id;
       if (template.descKey && templatePresetDesc) {
         templatePresetDesc.textContent = t(template.descKey);
         templatePresetDesc.classList.remove('hidden');
+      } else if (templatePresetDesc) {
+        templatePresetDesc.classList.add('hidden');
       }
 
-      resetTemplateSelect();
       updateDesignerActionButtons();
       renderDesigner();
       showToast(t('templateLoaded', { name: t(template.nameKey) }), 'layout-template');
@@ -1538,6 +1644,18 @@
       updateDesignerActionButtons();
     }
 
+    function buildClonedPresetName(baseName) {
+      const maxLen = Number(presetNameInput?.maxLength) || 60;
+      const marker = '\u0001';
+      const template = t('clonedPresetName', { name: marker });
+      const markerAt = template.indexOf(marker);
+      const prefix = markerAt >= 0 ? template.slice(0, markerAt) : '';
+      const suffix = markerAt >= 0 ? template.slice(markerAt + marker.length) : '';
+      const budget = Math.max(0, maxLen - prefix.length - suffix.length);
+      const clippedBase = String(baseName || '').slice(0, budget).trimEnd();
+      return (prefix + clippedBase + suffix).slice(0, maxLen);
+    }
+
     function cloneDesignerTraining() {
       if (!designerDraft || !designerEditId) return;
 
@@ -1551,7 +1669,7 @@
         audio: { ...designerDraft.audio }
       };
       designerEditId = null;
-      presetNameInput.value = t('clonedPresetName', { name: baseName });
+      presetNameInput.value = buildClonedPresetName(baseName);
       presetDefaultCheckbox.checked = false;
       deletePresetBtn.classList.add('hidden');
       savePresetBtn.textContent = t('saveTraining');
@@ -1657,7 +1775,7 @@
             </div>
           </div>
           <div class="mt-2">
-            <input type="text" class="label-input w-full px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-xs text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-emerald-500/30" placeholder="${t('optionalLabel')}" value="${seg.label || ''}" maxlength="30">
+            <input type="text" class="label-input w-full px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-xs text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-emerald-500/30" placeholder="${t('optionalLabel')}" value="${escapeHtml(resolveSegmentLabel(seg)).replace(/"/g, '&quot;')}" maxlength="30">
           </div>
         `;
 
@@ -1745,6 +1863,7 @@
         const labelInput = row.querySelector('.label-input');
         labelInput.addEventListener('input', () => {
           seg.label = labelInput.value.trim();
+          if (seg.labelKey) delete seg.labelKey;
           markDesignerModified();
         });
 
@@ -2042,7 +2161,8 @@
     function getPhaseLabel() {
       const seg = getCurrentSegment();
       if (!seg) return t('ready');
-      if (seg.label) return seg.label;
+      const custom = resolveSegmentLabel(seg);
+      if (custom) return custom;
       return seg.kind === 'work' ? t('workInterval') : t('restInterval');
     }
 
@@ -2732,6 +2852,7 @@
       settingsOverlay.setAttribute('aria-hidden', 'false');
       showSettingsList();
       updateInstallVisibility();
+      updateLanguageButtons();
       lucide.createIcons();
     }
 
@@ -2928,6 +3049,9 @@
     settingsBackdrop.addEventListener('click', closeSettings);
     settingsBackBtn.addEventListener('click', showSettingsList);
     settingsAboutBtn.addEventListener('click', showSettingsAbout);
+    document.querySelectorAll('.lang-option').forEach((btn) => {
+      btn.addEventListener('click', () => setLocale(btn.dataset.locale));
+    });
     settingsInstallBtn.addEventListener('click', () => {
       closeSettings();
       showInstallModal(true);
@@ -2956,8 +3080,9 @@
     bindTapHandler(skipBtn, skipSegment);
 
     window.addEventListener('load', () => {
-      currentLocale = detectLocale();
+      currentLocale = resolveLocale();
       applyStaticI18n();
+      updateLanguageButtons();
 
       loadStore();
       resetDesignerForm();
