@@ -1039,14 +1039,17 @@
     function clampSliderValue(value, min, max, step) {
       const numeric = Number(value);
       if (!Number.isFinite(numeric)) return min;
+      const decimals = String(step).includes('.') ? String(step).split('.')[1].length : 0;
       const stepped = Math.round(numeric / step) * step;
-      return Math.min(max, Math.max(min, stepped));
+      const rounded = Number(stepped.toFixed(decimals));
+      return Math.min(max, Math.max(min, rounded));
     }
 
     function bindTouchFriendlySlider(slider, { min, max, step = 1, onValueChange }) {
       let dragging = false;
       let lockValue = false;
       let lastValue = clampSliderValue(slider.value, min, max, step);
+      let activePointerId = null;
 
       const applyValue = (raw, notify = true) => {
         lastValue = clampSliderValue(raw, min, max, step);
@@ -1055,15 +1058,24 @@
         return lastValue;
       };
 
+      const releasePointer = (pointerId) => {
+        if (pointerId != null && slider.hasPointerCapture(pointerId)) {
+          try {
+            slider.releasePointerCapture(pointerId);
+          } catch (err) {
+            // already released
+          }
+        }
+        if (activePointerId === pointerId) activePointerId = null;
+      };
+
       const finishDrag = (e) => {
         if (!dragging) return;
         dragging = false;
         lockValue = true;
         slider.value = lastValue;
         onValueChange(lastValue);
-        if (e && slider.hasPointerCapture(e.pointerId)) {
-          slider.releasePointerCapture(e.pointerId);
-        }
+        releasePointer(e ? e.pointerId : activePointerId);
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             lockValue = false;
@@ -1075,6 +1087,7 @@
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         dragging = true;
         lockValue = false;
+        activePointerId = e.pointerId;
         lastValue = clampSliderValue(slider.value, min, max, step);
         slider.setPointerCapture(e.pointerId);
       });
@@ -1091,17 +1104,26 @@
 
       slider.addEventListener('pointerup', finishDrag);
       slider.addEventListener('pointercancel', finishDrag);
+      slider.addEventListener('lostpointercapture', () => {
+        if (!dragging) return;
+        dragging = false;
+        activePointerId = null;
+        lockValue = false;
+      });
 
       return {
-        setValue: (value) => applyValue(value),
+        setValue: (value, notify = true) => applyValue(value, notify),
         stepBy: (delta) => applyValue(lastValue + delta * step)
       };
     }
 
-    function bindStepperButtons(decBtn, incBtn, controller, { min, max }) {
+    function bindStepperButtons(decBtn, incBtn, controller, { min, max, step = 1 }) {
+      const atMin = (value) => clampSliderValue(value, min, max, step) <= min;
+      const atMax = (value) => clampSliderValue(value, min, max, step) >= max;
+
       const syncDisabled = (value) => {
-        decBtn.disabled = value <= min;
-        incBtn.disabled = value >= max;
+        decBtn.disabled = atMin(value);
+        incBtn.disabled = atMax(value);
       };
 
       decBtn.setAttribute('aria-label', t('decrease'));
@@ -1631,12 +1653,12 @@
           onValueChange: (value) => {
             seg.duration = value;
             durVal.textContent = formatSegmentDuration(value);
-            updateDesignerSummary();
             durSteppers.syncDisabled(value);
+            updateDesignerSummary();
             markDesignerModified();
           }
         });
-        const durSteppers = bindStepperButtons(durDec, durInc, durController, { min: durMin, max: durMax });
+        const durSteppers = bindStepperButtons(durDec, durInc, durController, { min: durMin, max: durMax, step: 1 });
         durSteppers.syncDisabled(seg.duration);
 
         const paceSlider = row.querySelector('.pace-slider');
@@ -1651,12 +1673,12 @@
           onValueChange: (value) => {
             seg.pace = value;
             paceVal.textContent = formatPace(value);
-            updateDesignerSummary();
             paceSteppers.syncDisabled(value);
+            updateDesignerSummary();
             markDesignerModified();
           }
         });
-        const paceSteppers = bindStepperButtons(paceDec, paceInc, paceController, { min: PACE_MIN, max: PACE_MAX });
+        const paceSteppers = bindStepperButtons(paceDec, paceInc, paceController, { min: PACE_MIN, max: PACE_MAX, step: PACE_STEP });
         paceSteppers.syncDisabled(seg.pace);
 
         pacePreviewBtn.addEventListener('click', () => {
@@ -1716,12 +1738,12 @@
       step: 1,
       onValueChange: (value) => {
         designerDraft.cycles = value;
-        updateDesignerSummary();
         cyclesSteppers.syncDisabled(value);
+        updateDesignerSummary();
         markDesignerModified();
       }
     });
-    const cyclesSteppers = bindStepperButtons(cyclesDecBtn, cyclesIncBtn, cyclesSliderCtrl, { min: 1, max: 100 });
+    const cyclesSteppers = bindStepperButtons(cyclesDecBtn, cyclesIncBtn, cyclesSliderCtrl, { min: 1, max: 100, step: 1 });
 
     const pitchNormalSliderCtrl = bindTouchFriendlySlider(pitchNormalInput, {
       min: 400,
@@ -1734,7 +1756,7 @@
         markDesignerModified();
       }
     });
-    const pitchNormalSteppers = bindStepperButtons(pitchNormalDecBtn, pitchNormalIncBtn, pitchNormalSliderCtrl, { min: 400, max: 1800 });
+    const pitchNormalSteppers = bindStepperButtons(pitchNormalDecBtn, pitchNormalIncBtn, pitchNormalSliderCtrl, { min: 400, max: 1800, step: 50 });
 
     const pitchHeavySliderCtrl = bindTouchFriendlySlider(pitchHeavyInput, {
       min: 400,
@@ -1747,7 +1769,7 @@
         markDesignerModified();
       }
     });
-    const pitchHeavySteppers = bindStepperButtons(pitchHeavyDecBtn, pitchHeavyIncBtn, pitchHeavySliderCtrl, { min: 400, max: 2200 });
+    const pitchHeavySteppers = bindStepperButtons(pitchHeavyDecBtn, pitchHeavyIncBtn, pitchHeavySliderCtrl, { min: 400, max: 2200, step: 50 });
 
     presetNameInput.addEventListener('input', markDesignerModified);
 
