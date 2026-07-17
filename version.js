@@ -1,2 +1,2 @@
 // Bump this on every release. Also bump @release in sw.js to the same value.
-var APP_VERSION = '1.1.7';
+var APP_VERSION = '1.1.8';

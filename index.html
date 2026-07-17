@@ -220,7 +220,6 @@
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
       border-color: rgba(16, 185, 129, 0.5);
       z-index: 50;
-      pointer-events: none;
       margin: 0 !important;
       transition: none;
     }
@@ -230,8 +229,13 @@
       border-radius: 0.75rem;
       box-sizing: border-box;
     }
-    .preset-drag-handle {
+    .preset-drag-handle,
+    .preset-drag-handle * {
       touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .preset-drag-handle {
       cursor: grab;
     }
     .preset-drag-handle:active {
@@ -240,6 +244,10 @@
     .preset-move-btn:disabled {
       opacity: 0.3;
       pointer-events: none;
+    }
+    #tabManager.is-reordering {
+      overflow: hidden;
+      touch-action: none;
     }
   </style>
 </head>
@@ -2380,16 +2388,89 @@
       card.style.height = '';
       card.style.zIndex = '';
       card.style.transform = '';
-      card.style.pointerEvents = '';
       card.style.boxSizing = '';
+      card.style.marginBottom = '';
     }
 
-    function finishManagerDrag(e) {
+    function setManagerReorderLock(locked) {
+      const scroller = getManagerScrollContainer();
+      if (!scroller) return;
+      scroller.classList.toggle('is-reordering', locked);
+    }
+
+    function getManagerDragCards() {
+      if (!managerDragState) return [...presetList.querySelectorAll('.preset-card')];
+      return [...presetList.querySelectorAll('.preset-card')].filter(el => el !== managerDragState.card);
+    }
+
+    function onManagerDragPointerMove(e) {
+      if (!managerDragState || e.pointerId !== managerDragState.pointerId) return;
+      e.preventDefault();
+      managerDragState.lastClientY = e.clientY;
+
+      if (!managerDragState.moved) {
+        if (Math.abs(e.clientY - managerDragState.startY) < MANAGER_DRAG_THRESHOLD) return;
+        activateManagerDrag(e.clientY);
+      }
+
+      if (!managerDragState?.moved) return;
+
+      const top = e.clientY - managerDragState.offsetY;
+      managerDragState.card.style.top = `${top}px`;
+      updateManagerDragPlaceholder(e.clientY);
+    }
+
+    function onManagerDragPointerUp(e) {
+      if (!managerDragState || e.pointerId !== managerDragState.pointerId) return;
+      finishManagerDrag();
+    }
+
+    function bindManagerDragDocumentListeners(bind) {
+      const method = bind ? 'addEventListener' : 'removeEventListener';
+      document[method]('pointermove', onManagerDragPointerMove, { passive: false });
+      document[method]('pointerup', onManagerDragPointerUp);
+      document[method]('pointercancel', onManagerDragPointerUp);
+    }
+
+    function activateManagerDrag(clientY) {
+      if (!managerDragState || managerDragState.moved) return;
+      const { card } = managerDragState;
+      const rect = card.getBoundingClientRect();
+      const placeholder = document.createElement('div');
+      placeholder.className = 'preset-card-placeholder';
+      placeholder.style.height = `${rect.height}px`;
+      card.parentNode.insertBefore(placeholder, card);
+      // Keep the floating card out of the ordered slot list (still in the same parent).
+      presetList.appendChild(card);
+
+      managerDragState.moved = true;
+      managerDragState.placeholder = placeholder;
+      managerDragState.offsetY = clientY - rect.top;
+
+      card.classList.add('is-dragging');
+      card.style.position = 'fixed';
+      card.style.left = `${rect.left}px`;
+      card.style.top = `${rect.top}px`;
+      card.style.width = `${rect.width}px`;
+      card.style.height = `${rect.height}px`;
+      card.style.boxSizing = 'border-box';
+      card.style.zIndex = '60';
+      card.style.marginBottom = '0';
+
+      setManagerReorderLock(true);
+      managerDragState.autoScrollRaf = requestAnimationFrame(() => {
+        if (!managerDragState) return;
+        tickManagerAutoScroll(managerDragState.lastClientY);
+      });
+    }
+
+    function finishManagerDrag() {
       if (!managerDragState) return;
-      if (e && managerDragState.pointerId != null && e.pointerId !== managerDragState.pointerId) return;
 
       const state = managerDragState;
       managerDragState = null;
+      bindManagerDragDocumentListeners(false);
+      setManagerReorderLock(false);
 
       const {
         card,
@@ -2409,7 +2490,7 @@
       if (placeholder && placeholder.parentNode) {
         placeholder.parentNode.insertBefore(card, placeholder);
         placeholder.remove();
-      } else if (card.parentNode !== originParent && originParent) {
+      } else if (originParent && card.parentNode !== originParent) {
         if (originNext && originNext.parentNode === originParent) {
           originParent.insertBefore(card, originNext);
         } else {
@@ -2435,7 +2516,7 @@
     function updateManagerDragPlaceholder(clientY) {
       if (!managerDragState?.placeholder) return;
       const { placeholder, targetIndex } = managerDragState;
-      const cards = [...presetList.querySelectorAll('.preset-card')];
+      const cards = getManagerDragCards();
 
       let rawIndex = cards.length;
       for (let i = 0; i < cards.length; i++) {
@@ -2495,7 +2576,6 @@
         e.preventDefault();
         e.stopPropagation();
 
-        const rect = card.getBoundingClientRect();
         const fromIndex = [...presetList.querySelectorAll('.preset-card')].indexOf(card);
 
         managerDragState = {
@@ -2504,7 +2584,7 @@
           pointerId: e.pointerId,
           startY: e.clientY,
           lastClientY: e.clientY,
-          offsetY: e.clientY - rect.top,
+          offsetY: 0,
           moved: false,
           fromIndex,
           targetIndex: fromIndex,
@@ -2514,49 +2594,11 @@
           originNext: card.nextSibling
         };
 
-        handle.setPointerCapture(e.pointerId);
-      });
-
-      handle.addEventListener('pointermove', (e) => {
-        if (!managerDragState || managerDragState.card !== card || managerDragState.pointerId !== e.pointerId) return;
-        managerDragState.lastClientY = e.clientY;
-
-        if (!managerDragState.moved) {
-          if (Math.abs(e.clientY - managerDragState.startY) < MANAGER_DRAG_THRESHOLD) return;
-          managerDragState.moved = true;
-
-          const rect = card.getBoundingClientRect();
-          const placeholder = document.createElement('div');
-          placeholder.className = 'preset-card-placeholder';
-          placeholder.style.height = `${rect.height}px`;
-          card.parentNode.insertBefore(placeholder, card);
-          managerDragState.placeholder = placeholder;
-          managerDragState.offsetY = e.clientY - rect.top;
-
-          card.classList.add('is-dragging');
-          card.style.position = 'fixed';
-          card.style.left = `${rect.left}px`;
-          card.style.width = `${rect.width}px`;
-          card.style.height = `${rect.height}px`;
-          card.style.boxSizing = 'border-box';
-          card.style.zIndex = '60';
-          card.style.pointerEvents = 'none';
-          document.body.appendChild(card);
-
-          managerDragState.autoScrollRaf = requestAnimationFrame(() => {
-            if (!managerDragState) return;
-            tickManagerAutoScroll(managerDragState.lastClientY);
-          });
-        }
-
-        const top = e.clientY - managerDragState.offsetY;
-        card.style.top = `${top}px`;
-        updateManagerDragPlaceholder(e.clientY);
-      });
-
-      handle.addEventListener('pointerup', finishManagerDrag);
-      handle.addEventListener('pointercancel', finishManagerDrag);
-      handle.addEventListener('lostpointercapture', finishManagerDrag);
+        bindManagerDragDocumentListeners(true);
+        try {
+          handle.setPointerCapture(e.pointerId);
+        } catch (_) { /* some browsers reject capture on buttons */ }
+      }, { passive: false });
     }
 
     function escapeHtml(str) {
