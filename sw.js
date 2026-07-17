@@ -1,9 +1,20 @@
-// Deploy: bump CACHE_NAME here AND APP_VERSION in index.html
-const CACHE_NAME = 'interval-timer-v9';
+// Deploy checklist:
+// 1. Bump APP_VERSION in version.js
+// 2. Bump @release below to the same value (changes SW bytes so browsers detect the update)
+// @release 1.1.5
+const SW_RELEASE = '1.1.5';
+
+importScripts('/version.js?v=' + encodeURIComponent(SW_RELEASE));
+if (typeof APP_VERSION === 'undefined' || APP_VERSION !== SW_RELEASE) {
+  throw new Error('version.js out of sync with sw.js SW_RELEASE=' + SW_RELEASE);
+}
+
+const CACHE_NAME = 'interval-timer-' + SW_RELEASE.replace(/\./g, '-');
 
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/version.js',
   '/manifest.webmanifest',
   '/favicon.ico',
   '/icons/logo.svg',
@@ -46,10 +57,11 @@ function isCdnRequest(url) {
   return CDN_PATTERNS.some((pattern) => pattern.test(url.href));
 }
 
-function isAppShellRequest(url) {
+function isNetworkFirstRequest(url, request) {
   if (url.origin !== self.location.origin) return false;
+  if (request.mode === 'navigate') return true;
   const path = url.pathname;
-  return path === '/' || path === '/index.html';
+  return path === '/' || path === '/index.html' || path === '/version.js' || path.endsWith('/');
 }
 
 function cacheFirstWithNetworkUpdate(request) {
@@ -98,7 +110,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.origin === self.location.origin) {
-    if (isAppShellRequest(url)) {
+    if (isNetworkFirstRequest(url, event.request)) {
       event.respondWith(networkFirstWithCacheFallback(event.request));
     } else {
       event.respondWith(cacheFirstWithNetworkUpdate(event.request));

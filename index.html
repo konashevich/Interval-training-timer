@@ -131,8 +131,9 @@
       color: rgb(251 191 36);
     }
     .pb-safe { padding-bottom: var(--tab-bar-inset); }
-    #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
+    #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; transition: bottom 0.2s ease, margin-bottom 0.2s ease; }
     #updateBanner { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
+    html.update-banner-visible #toast { bottom: calc(var(--tab-bar-inset) + 3.75rem); }
     #appShell { padding-bottom: var(--tab-bar-inset); }
     .range-slider-wrap {
       padding: 0.625rem 0;
@@ -412,8 +413,9 @@
 
   <!-- Bottom Tab Bar -->
   <div id="updateBanner" class="fixed left-1/2 -translate-x-1/2 z-50 hidden max-w-sm w-[calc(100%-2rem)]">
-    <div class="bg-neutral-900 border border-emerald-500/30 text-neutral-200 px-4 py-3 rounded-2xl text-xs font-semibold shadow-2xl flex items-center gap-3">
-      <span id="updateBannerText" class="flex-1" data-i18n="updateAvailable">Update available</span>
+    <div class="bg-neutral-900 border border-emerald-500/30 text-neutral-200 px-4 py-3 rounded-2xl text-xs font-semibold shadow-2xl flex items-center gap-2">
+      <span id="updateBannerText" class="flex-1 min-w-0" data-i18n="updateAvailable">Update available</span>
+      <button id="updateDismissBtn" type="button" class="shrink-0 px-2.5 py-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 font-semibold transition-colors active:scale-95" data-i18n="updateLater">Later</button>
       <button id="updateRefreshBtn" type="button" class="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold transition-colors active:scale-95" data-i18n="updateRefresh">Refresh</button>
     </div>
   </div>
@@ -530,7 +532,7 @@
           </div>
           <div class="bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3">
             <dt class="text-[10px] font-extrabold uppercase tracking-widest text-neutral-500 mb-1" data-i18n="aboutVersion">Version</dt>
-            <dd class="text-sm font-semibold text-white" id="aboutVersionValue">1.1.0</dd>
+            <dd class="text-sm font-semibold text-white" id="aboutVersionValue">—</dd>
           </div>
         </dl>
       </div>
@@ -542,6 +544,13 @@
     <span id="toastMessage" data-i18n="done">Done!</span>
   </div>
 
+  <script src="/version.js"></script>
+  <script>
+    if (typeof APP_VERSION === 'undefined') {
+      window.APP_VERSION = '0.0.0';
+      console.error('version.js failed to load — version metadata unavailable.');
+    }
+  </script>
   <script>
     // =========================================================================
     // --- i18n (auto: Ukrainian if ru/uk in browser languages) ---
@@ -654,6 +663,9 @@
         feedbackTelegram: 'telegram: @oleksiiko',
         updateAvailable: 'Update available',
         updateRefresh: 'Refresh',
+        updateLater: 'Later',
+        appUpdated: 'Updated to v{version}',
+        swRegisterFailed: 'Could not update offline cache',
         installTitle: 'Install Interval Training Timer',
         installBody: 'Add to your home screen for fullscreen access and quick launch — works offline after your first visit.',
         installBtn: 'Install',
@@ -775,6 +787,9 @@
         feedbackTelegram: 'telegram: @oleksiiko',
         updateAvailable: 'Доступне оновлення',
         updateRefresh: 'Оновити',
+        updateLater: 'Пізніше',
+        appUpdated: 'Оновлено до v{version}',
+        swRegisterFailed: 'Не вдалося оновити офлайн-кеш',
         installTitle: 'Встановити таймер інтервального тренування',
         installBody: 'Додайте на головний екран для повноекранного режиму та швидкого запуску — працює офлайн після першого відвідування.',
         installBtn: 'Встановити',
@@ -1136,6 +1151,7 @@
 
     let designerEditId = null;
     let designerDraft = null;
+    let designerModified = false;
     let currentTab = 'main';
 
     let audioCtx = null;
@@ -1412,6 +1428,7 @@
       if (!template) return;
 
       designerEditId = null;
+      clearDesignerModified();
       designerDraft = {
         segments: template.segments.map(s => createSegment(s.kind, s.duration, resolveSegmentLabel(s))),
         cycles: template.cycles,
@@ -1432,7 +1449,16 @@
       showToast(t('templateLoaded', { name: t(template.nameKey) }), 'layout-template');
     }
 
+    function markDesignerModified() {
+      designerModified = true;
+    }
+
+    function clearDesignerModified() {
+      designerModified = false;
+    }
+
     function resetDesignerForm() {
+      clearDesignerModified();
       designerDraft = {
         segments: [createSegment('work', 20), createSegment('rest', 10)],
         cycles: 8,
@@ -1447,6 +1473,7 @@
     }
 
     function loadDesignerFromPreset(preset) {
+      clearDesignerModified();
       designerDraft = {
         segments: preset.segments.map(s => normalizeSegment({ ...s, id: s.id || generateId() })),
         cycles: preset.cycles,
@@ -1560,6 +1587,7 @@
           btn.addEventListener('click', () => {
             seg.kind = btn.dataset.kind;
             if (seg.kind === 'work' && seg.duration < 1) seg.duration = 1;
+            markDesignerModified();
             renderDesigner();
           });
         });
@@ -1569,6 +1597,7 @@
             const tmp = designerDraft.segments[index - 1];
             designerDraft.segments[index - 1] = designerDraft.segments[index];
             designerDraft.segments[index] = tmp;
+            markDesignerModified();
             renderDesigner();
           }
         });
@@ -1578,6 +1607,7 @@
             const tmp = designerDraft.segments[index + 1];
             designerDraft.segments[index + 1] = designerDraft.segments[index];
             designerDraft.segments[index] = tmp;
+            markDesignerModified();
             renderDesigner();
           }
         });
@@ -1585,6 +1615,7 @@
         row.querySelector('[data-action="delete"]').addEventListener('click', () => {
           if (designerDraft.segments.length > 1) {
             designerDraft.segments.splice(index, 1);
+            markDesignerModified();
             renderDesigner();
           }
         });
@@ -1602,6 +1633,7 @@
             durVal.textContent = formatSegmentDuration(value);
             updateDesignerSummary();
             durSteppers.syncDisabled(value);
+            markDesignerModified();
           }
         });
         const durSteppers = bindStepperButtons(durDec, durInc, durController, { min: durMin, max: durMax });
@@ -1621,6 +1653,7 @@
             paceVal.textContent = formatPace(value);
             updateDesignerSummary();
             paceSteppers.syncDisabled(value);
+            markDesignerModified();
           }
         });
         const paceSteppers = bindStepperButtons(paceDec, paceInc, paceController, { min: PACE_MIN, max: PACE_MAX });
@@ -1633,6 +1666,7 @@
         const labelInput = row.querySelector('.label-input');
         labelInput.addEventListener('input', () => {
           seg.label = labelInput.value.trim();
+          markDesignerModified();
         });
 
         segmentList.appendChild(row);
@@ -1659,11 +1693,13 @@
 
     document.getElementById('addWorkBtn').addEventListener('click', () => {
       designerDraft.segments.push(createSegment('work', 10));
+      markDesignerModified();
       renderDesigner();
     });
 
     document.getElementById('addRestBtn').addEventListener('click', () => {
       designerDraft.segments.push(createSegment('rest', 10));
+      markDesignerModified();
       renderDesigner();
     });
 
@@ -1682,6 +1718,7 @@
         designerDraft.cycles = value;
         updateDesignerSummary();
         cyclesSteppers.syncDisabled(value);
+        markDesignerModified();
       }
     });
     const cyclesSteppers = bindStepperButtons(cyclesDecBtn, cyclesIncBtn, cyclesSliderCtrl, { min: 1, max: 100 });
@@ -1694,6 +1731,7 @@
         designerDraft.audio.pitchNormal = value;
         pitchNormalVal.textContent = formatHz(value);
         pitchNormalSteppers.syncDisabled(value);
+        markDesignerModified();
       }
     });
     const pitchNormalSteppers = bindStepperButtons(pitchNormalDecBtn, pitchNormalIncBtn, pitchNormalSliderCtrl, { min: 400, max: 1800 });
@@ -1706,9 +1744,12 @@
         designerDraft.audio.pitchHeavy = value;
         pitchHeavyVal.textContent = formatHz(value);
         pitchHeavySteppers.syncDisabled(value);
+        markDesignerModified();
       }
     });
     const pitchHeavySteppers = bindStepperButtons(pitchHeavyDecBtn, pitchHeavyIncBtn, pitchHeavySliderCtrl, { min: 400, max: 2200 });
+
+    presetNameInput.addEventListener('input', markDesignerModified);
 
     function validateAndSavePreset() {
       if (!designerDraft) return;
@@ -1751,6 +1792,7 @@
       designerEditId = preset.id;
       deletePresetBtn.classList.remove('hidden');
       savePresetBtn.textContent = t('updateTraining');
+      clearDesignerModified();
       showToast(t('savedPreset', { name: preset.name }), 'check');
       playBeepTone(preset.audio.pitchNormal, 0.1, false);
       renderManagerList();
@@ -2140,22 +2182,22 @@
 
       clearTimerHandles();
       getAudioContext();
-      requestWakeLock();
 
       if (timerState.currentPhase === 'idle' || timerState.currentPhase === 'completed') {
         const first = getFirstActiveSegment();
-        if (first) {
-          timerState.cycleIndex = 1;
-          timerState.segmentIndex = first.index;
-          timerState.currentSecond = first.segment.duration;
-          timerState.currentPhase = 'active';
-          if (first.segment.kind === 'work') {
-            playBeepTone(getPitchNormal(), 0.12, false);
-            triggerFlash('light');
-          }
+        if (!first) return;
+
+        timerState.cycleIndex = 1;
+        timerState.segmentIndex = first.index;
+        timerState.currentSecond = first.segment.duration;
+        timerState.currentPhase = 'active';
+        if (first.segment.kind === 'work') {
+          playBeepTone(getPitchNormal(), 0.12, false);
+          triggerFlash('light');
         }
       }
 
+      requestWakeLock();
       timerState.isRunning = true;
       togglePlayButtonIcon(true);
       audioAlert.classList.add('hidden');
@@ -2360,13 +2402,17 @@
     // --- PWA: install prompt & settings ---
     // =========================================================================
 
-    const APP_VERSION = '1.1.0';
     const PWA_PREFS_KEY = 'pwa_install_prefs';
     const PWA_ASK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+    const VERSION_SEEN_KEY = 'app_version_seen';
+    const RELOADING_KEY = 'sw-reloading';
 
     let deferredInstallPrompt = null;
     let swRegistration = null;
     let updateBannerShown = false;
+    let dismissedUpdateKey = null;
+    let pendingUpdateKey = null;
+    let hadServiceWorkerController = false;
 
     const installModal = document.getElementById('installModal');
     const installModalBackdrop = document.getElementById('installModalBackdrop');
@@ -2387,6 +2433,7 @@
     const aboutVersionValue = document.getElementById('aboutVersionValue');
     const updateBanner = document.getElementById('updateBanner');
     const updateRefreshBtn = document.getElementById('updateRefreshBtn');
+    const updateDismissBtn = document.getElementById('updateDismissBtn');
 
     function isMobileDevice() {
       return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -2541,36 +2588,91 @@
       setTimeout(() => showInstallModal(false), 600);
     }
 
+    // --- App updates (single state machine) ---
+    // Safe reload: timer idle/completed and designer has no unsaved edits.
+    // Banner when unsafe. "Later" dismisses only this update key until a newer one arrives.
+
+    function isSafeToAutoReload() {
+      if (timerState.isRunning) return false;
+      if (timerState.currentPhase === 'active') return false;
+      if (designerModified) return false;
+      return true;
+    }
+
     function showUpdateBanner() {
       if (updateBannerShown || !updateBanner) return;
-      if (sessionStorage.getItem('sw-update-reloading') === '1') return;
       updateBannerShown = true;
       updateBanner.classList.remove('hidden');
+      document.documentElement.classList.add('update-banner-visible');
     }
 
     function hideUpdateBanner() {
       updateBannerShown = false;
       if (updateBanner) updateBanner.classList.add('hidden');
+      document.documentElement.classList.remove('update-banner-visible');
     }
 
-    function refreshForUpdate() {
-      sessionStorage.setItem('sw-update-reloading', '1');
+    function reloadForUpdate() {
+      sessionStorage.setItem(RELOADING_KEY, '1');
       location.reload();
     }
 
-    function trackServiceWorker(worker) {
-      if (!worker) return;
-      worker.addEventListener('statechange', () => {
-        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-          showUpdateBanner();
+    function offerUpdate(updateKey) {
+      if (sessionStorage.getItem(RELOADING_KEY) === '1') return;
+      if (!updateKey) updateKey = 'pending';
+      pendingUpdateKey = updateKey;
+      if (dismissedUpdateKey === updateKey) return;
+
+      if (isSafeToAutoReload()) {
+        reloadForUpdate();
+        return;
+      }
+      showUpdateBanner();
+    }
+
+    function dismissUpdateBanner() {
+      dismissedUpdateKey = pendingUpdateKey || 'pending';
+      hideUpdateBanner();
+    }
+
+    function notifyAppVersionChange() {
+      if (typeof APP_VERSION === 'undefined' || APP_VERSION === '0.0.0') return;
+
+      const seen = localStorage.getItem(VERSION_SEEN_KEY);
+      if (seen && seen !== APP_VERSION) {
+        showToast(t('appUpdated', { version: APP_VERSION }), 'sparkles');
+      }
+      localStorage.setItem(VERSION_SEEN_KEY, APP_VERSION);
+      if (aboutVersionValue) aboutVersionValue.textContent = APP_VERSION;
+    }
+
+    function parseVersionFromScript(text) {
+      const match = String(text).match(/APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+      return match ? match[1] : null;
+    }
+
+    async function checkForContentUpdate() {
+      if (typeof APP_VERSION === 'undefined' || APP_VERSION === '0.0.0') return;
+      try {
+        const response = await fetch('/version.js?t=' + Date.now(), { cache: 'no-store' });
+        if (!response.ok) return;
+        const remote = parseVersionFromScript(await response.text());
+        if (remote && remote !== APP_VERSION) {
+          offerUpdate('content:' + remote);
         }
-      });
+      } catch (err) {
+        // offline — ignore
+      }
     }
 
     async function checkForServiceWorkerUpdate() {
       if (!swRegistration) return;
       try {
         await swRegistration.update();
+        if (swRegistration.waiting && hadServiceWorkerController) {
+          const key = swRegistration.waiting.scriptURL || 'sw-waiting';
+          offerUpdate(key);
+        }
       } catch (err) {
         console.warn('Service worker update check failed:', err);
       }
@@ -2578,36 +2680,56 @@
 
     function registerServiceWorker() {
       if (!('serviceWorker' in navigator)) return;
+      if (typeof APP_VERSION === 'undefined' || APP_VERSION === '0.0.0') return;
 
-      if (sessionStorage.getItem('sw-update-reloading') === '1') {
-        sessionStorage.removeItem('sw-update-reloading');
+      hadServiceWorkerController = !!navigator.serviceWorker.controller;
+
+      if (sessionStorage.getItem(RELOADING_KEY) === '1') {
+        sessionStorage.removeItem(RELOADING_KEY);
       }
 
-      navigator.serviceWorker.register('/sw.js').then((registration) => {
+      navigator.serviceWorker.register('/sw.js?v=' + encodeURIComponent(APP_VERSION)).then((registration) => {
         swRegistration = registration;
 
-        if (registration.waiting && navigator.serviceWorker.controller) {
-          showUpdateBanner();
+        if (registration.waiting && hadServiceWorkerController) {
+          offerUpdate(registration.waiting.scriptURL || 'sw-waiting');
         }
 
-        trackServiceWorker(registration.installing);
         registration.addEventListener('updatefound', () => {
-          trackServiceWorker(registration.installing);
+          const worker = registration.installing;
+          if (!worker) return;
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && hadServiceWorkerController) {
+              offerUpdate(worker.scriptURL || 'sw-installed');
+            }
+          });
         });
 
         checkForServiceWorkerUpdate();
       }).catch((err) => {
         console.warn('Service worker registration failed:', err);
+        showToast(t('swRegisterFailed'), 'alert-triangle');
       });
 
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (sessionStorage.getItem('sw-update-reloading') === '1') return;
-        showUpdateBanner();
+        if (sessionStorage.getItem(RELOADING_KEY) === '1') return;
+        if (!hadServiceWorkerController) {
+          hadServiceWorkerController = true;
+          return;
+        }
+        offerUpdate('controllerchange');
       });
     }
 
     if (updateRefreshBtn) {
-      updateRefreshBtn.addEventListener('click', refreshForUpdate);
+      updateRefreshBtn.addEventListener('click', () => {
+        dismissedUpdateKey = null;
+        reloadForUpdate();
+      });
+    }
+
+    if (updateDismissBtn) {
+      updateDismissBtn.addEventListener('click', dismissUpdateBanner);
     }
 
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -2675,6 +2797,7 @@
       updateViewportLayout();
       lucide.createIcons();
       updateInstallVisibility();
+      notifyAppVersionChange();
       registerServiceWorker();
       maybeShowInstallPrompt();
 
@@ -2689,13 +2812,14 @@
       }
     });
 
-    document.addEventListener('visibilitychange', async () => {
+    document.addEventListener('visibilitychange', () => {
       if (wakeLock !== null && document.visibilityState === 'visible') {
         requestWakeLock();
       }
       if (document.visibilityState === 'visible') {
         updateViewportLayout();
         checkForServiceWorkerUpdate();
+        checkForContentUpdate();
       }
     });
 
