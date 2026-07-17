@@ -215,6 +215,32 @@
       opacity: 0.35;
       pointer-events: none;
     }
+    .preset-card.is-dragging {
+      opacity: 0.96;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+      border-color: rgba(16, 185, 129, 0.5);
+      z-index: 50;
+      pointer-events: none;
+      margin: 0 !important;
+      transition: none;
+    }
+    .preset-card-placeholder {
+      border: 1px dashed rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.06);
+      border-radius: 0.75rem;
+      box-sizing: border-box;
+    }
+    .preset-drag-handle {
+      touch-action: none;
+      cursor: grab;
+    }
+    .preset-drag-handle:active {
+      cursor: grabbing;
+    }
+    .preset-move-btn:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body class="bg-neutral-950 text-neutral-100 flex flex-col overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
@@ -661,6 +687,7 @@
         increase: 'Increase',
         deleteSegment: 'Delete segment',
         editTraining: 'Edit training',
+        reorderTraining: 'Drag to reorder',
         workInterval: 'Work Interval',
         restInterval: 'Rest Interval',
         pauseCycle: 'Pause Cycle',
@@ -792,6 +819,7 @@
         increase: 'Збільшити',
         deleteSegment: 'Видалити сегмент',
         editTraining: 'Редагувати тренування',
+        reorderTraining: 'Перетягніть для зміни порядку',
         workInterval: 'Робочий інтервал',
         restInterval: 'Інтервал відпочинку',
         pauseCycle: 'Пауза циклу',
@@ -1050,6 +1078,7 @@
         id,
         name: t('defaultPresetName'),
         isDefault: true,
+        sortOrder: 0,
         createdAt: now,
         updatedAt: now,
         segments: [
@@ -1089,6 +1118,7 @@
         }
         appStore = data;
         appStore.presets = appStore.presets.map(normalizePreset);
+        ensurePresetSortOrder(true);
         return appStore;
       } catch (e) {
         console.warn('Corrupt storage, resetting.', e);
@@ -1108,8 +1138,37 @@
       }
     }
 
+    function ensurePresetSortOrder(persist = true) {
+      if (!appStore?.presets?.length) return false;
+      const missing = appStore.presets.filter(p => typeof p.sortOrder !== 'number');
+      if (!missing.length) return false;
+
+      if (missing.length === appStore.presets.length) {
+        missing
+          .slice()
+          .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+          .forEach((p, index) => {
+            p.sortOrder = index;
+          });
+      } else {
+        const maxExisting = appStore.presets.reduce((max, p) => (
+          typeof p.sortOrder === 'number' ? Math.max(max, p.sortOrder) : max
+        ), -1);
+        missing
+          .slice()
+          .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+          .forEach((p, index) => {
+            p.sortOrder = maxExisting + 1 + index;
+          });
+      }
+
+      if (persist) saveStore(appStore);
+      return true;
+    }
+
     function getPresets() {
-      return appStore.presets.slice().sort((a, b) => b.updatedAt - a.updatedAt);
+      ensurePresetSortOrder(false);
+      return appStore.presets.slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
     }
 
     function getPresetById(id) {
@@ -1120,8 +1179,15 @@
       const idx = appStore.presets.findIndex(p => p.id === preset.id);
       preset.updatedAt = Date.now();
       if (idx >= 0) {
+        if (typeof preset.sortOrder !== 'number') {
+          preset.sortOrder = appStore.presets[idx].sortOrder ?? idx;
+        }
         appStore.presets[idx] = preset;
       } else {
+        const maxOrder = appStore.presets.reduce((max, p) => (
+          Math.max(max, typeof p.sortOrder === 'number' ? p.sortOrder : -1)
+        ), -1);
+        preset.sortOrder = maxOrder + 1;
         appStore.presets.push(preset);
       }
       if (preset.isDefault) {
@@ -1141,16 +1207,44 @@
       const wasDefault = appStore.defaultPresetId === id;
       const wasActive = appStore.activePresetId === id;
       appStore.presets = appStore.presets.filter(p => p.id !== id);
+      appStore.presets
+        .slice()
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .forEach((p, index) => {
+          p.sortOrder = index;
+        });
       if (wasDefault) {
-        appStore.presets[0].isDefault = true;
-        appStore.defaultPresetId = appStore.presets[0].id;
+        const first = getPresets()[0] || appStore.presets[0];
+        first.isDefault = true;
+        appStore.defaultPresetId = first.id;
       }
       if (wasActive) {
-        const fallback = getPresetById(appStore.defaultPresetId) || appStore.presets[0];
+        const fallback = getPresetById(appStore.defaultPresetId) || getPresets()[0] || appStore.presets[0];
         appStore.activePresetId = fallback.id;
         loadPresetOnMain(fallback, false);
       }
       saveStore(appStore);
+      return true;
+    }
+
+    function reorderPresetsByIds(orderedIds) {
+      orderedIds.forEach((id, index) => {
+        const preset = getPresetById(id);
+        if (preset) preset.sortOrder = index;
+      });
+      saveStore(appStore);
+    }
+
+    function movePresetByOffset(id, offset) {
+      const presets = getPresets();
+      const index = presets.findIndex(p => p.id === id);
+      if (index < 0) return false;
+      const next = index + offset;
+      if (next < 0 || next >= presets.length) return false;
+      const ids = presets.map(p => p.id);
+      const [removed] = ids.splice(index, 1);
+      ids.splice(next, 0, removed);
+      reorderPresetsByIds(ids);
       return true;
     }
 
@@ -2193,20 +2287,35 @@
       managerEmpty.classList.remove('flex');
       presetList.classList.remove('hidden');
 
-      presets.forEach(preset => {
+      presets.forEach((preset, index) => {
         const card = document.createElement('div');
-        card.className = 'relative flex items-center gap-3 p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-colors cursor-pointer active:scale-[0.99]';
+        card.className = 'preset-card relative flex items-center gap-1.5 sm:gap-2 p-3 sm:p-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-neutral-700 transition-colors cursor-pointer active:scale-[0.99]';
+        card.dataset.presetId = preset.id;
 
         const isActive = preset.id === appStore.activePresetId;
         const badges = [];
         if (preset.isDefault) badges.push(`<span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">${t('badgeDefault')}</span>`);
         if (isActive) badges.push(`<span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-violet-500/10 border border-violet-500/30 text-violet-400">${t('badgeActive')}</span>`);
 
+        const canMoveUp = index > 0;
+        const canMoveDown = index < presets.length - 1;
+
         card.innerHTML = `
+          <button type="button" class="preset-drag-handle shrink-0 p-2 -ml-1 rounded-lg text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors" aria-label="${t('reorderTraining')}">
+            <i data-lucide="grip-vertical" class="w-5 h-5"></i>
+          </button>
           <div class="flex-1 min-w-0">
             <div class="font-bold text-white truncate">${escapeHtml(preset.name)}</div>
             <div class="text-xs text-neutral-500 mt-0.5">${escapeHtml(getPresetSubtitle(preset))}</div>
             <div class="flex gap-1.5 mt-2 flex-wrap">${badges.join('')}</div>
+          </div>
+          <div class="flex flex-col gap-0.5 shrink-0">
+            <button type="button" class="preset-move-btn move-up-btn p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors" aria-label="${t('moveUp')}" ${canMoveUp ? '' : 'disabled'}>
+              <i data-lucide="chevron-up" class="w-4 h-4"></i>
+            </button>
+            <button type="button" class="preset-move-btn move-down-btn p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors" aria-label="${t('moveDown')}" ${canMoveDown ? '' : 'disabled'}>
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
           </div>
           <button type="button" class="edit-preset-btn shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors active:scale-95" aria-label="${t('editTraining')}">
             <i data-lucide="settings" class="w-5 h-5"></i>
@@ -2214,7 +2323,12 @@
         `;
 
         card.addEventListener('click', (e) => {
-          if (e.target.closest('.edit-preset-btn')) return;
+          if (
+            e.target.closest('.edit-preset-btn') ||
+            e.target.closest('.preset-drag-handle') ||
+            e.target.closest('.preset-move-btn')
+          ) return;
+          if (Date.now() < suppressManagerCardClickUntil) return;
           designerEditId = null;
           loadPresetOnMain(preset);
           switchTab('main', true);
@@ -2228,10 +2342,221 @@
           switchTab('designer', true);
         });
 
+        card.querySelector('.move-up-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (movePresetByOffset(preset.id, -1)) renderManagerList();
+        });
+
+        card.querySelector('.move-down-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (movePresetByOffset(preset.id, 1)) renderManagerList();
+        });
+
+        bindPresetDragHandle(card.querySelector('.preset-drag-handle'), card);
         presetList.appendChild(card);
       });
 
       lucide.createIcons();
+    }
+
+    let managerDragState = null;
+    let suppressManagerCardClickUntil = 0;
+    const MANAGER_DRAG_THRESHOLD = 6;
+    const MANAGER_DRAG_HYSTERESIS = 12;
+    const MANAGER_SCROLL_EDGE = 56;
+    const MANAGER_SCROLL_SPEED = 14;
+    const MANAGER_CLICK_SUPPRESS_MS = 320;
+
+    function getManagerScrollContainer() {
+      return document.getElementById('tabManager');
+    }
+
+    function clearManagerDragStyles(card) {
+      card.classList.remove('is-dragging');
+      card.style.position = '';
+      card.style.left = '';
+      card.style.top = '';
+      card.style.width = '';
+      card.style.height = '';
+      card.style.zIndex = '';
+      card.style.transform = '';
+      card.style.pointerEvents = '';
+      card.style.boxSizing = '';
+    }
+
+    function finishManagerDrag(e) {
+      if (!managerDragState) return;
+      if (e && managerDragState.pointerId != null && e.pointerId !== managerDragState.pointerId) return;
+
+      const state = managerDragState;
+      managerDragState = null;
+
+      const {
+        card,
+        handle,
+        pointerId,
+        placeholder,
+        moved,
+        fromIndex,
+        targetIndex,
+        autoScrollRaf,
+        originParent,
+        originNext
+      } = state;
+
+      if (autoScrollRaf) cancelAnimationFrame(autoScrollRaf);
+
+      if (placeholder && placeholder.parentNode) {
+        placeholder.parentNode.insertBefore(card, placeholder);
+        placeholder.remove();
+      } else if (card.parentNode !== originParent && originParent) {
+        if (originNext && originNext.parentNode === originParent) {
+          originParent.insertBefore(card, originNext);
+        } else {
+          originParent.appendChild(card);
+        }
+      }
+
+      clearManagerDragStyles(card);
+      try {
+        if (pointerId != null) handle.releasePointerCapture(pointerId);
+      } catch (_) { /* already released */ }
+
+      if (!moved) return;
+
+      suppressManagerCardClickUntil = Date.now() + MANAGER_CLICK_SUPPRESS_MS;
+      if (targetIndex !== fromIndex) {
+        const orderedIds = [...presetList.querySelectorAll('.preset-card')].map(el => el.dataset.presetId);
+        reorderPresetsByIds(orderedIds);
+      }
+      renderManagerList();
+    }
+
+    function updateManagerDragPlaceholder(clientY) {
+      if (!managerDragState?.placeholder) return;
+      const { placeholder, targetIndex } = managerDragState;
+      const cards = [...presetList.querySelectorAll('.preset-card')];
+
+      let rawIndex = cards.length;
+      for (let i = 0; i < cards.length; i++) {
+        const rect = cards[i].getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) {
+          rawIndex = i;
+          break;
+        }
+      }
+
+      if (rawIndex === targetIndex) return;
+
+      const pRect = placeholder.getBoundingClientRect();
+      const pMid = pRect.top + pRect.height / 2;
+      if (Math.abs(clientY - pMid) < MANAGER_DRAG_HYSTERESIS) return;
+
+      const reference = cards[rawIndex] || null;
+      if (reference) {
+        presetList.insertBefore(placeholder, reference);
+      } else {
+        presetList.appendChild(placeholder);
+      }
+      managerDragState.targetIndex = rawIndex;
+    }
+
+    function tickManagerAutoScroll(clientY) {
+      if (!managerDragState) return;
+      const scroller = getManagerScrollContainer();
+      if (!scroller) return;
+
+      const rect = scroller.getBoundingClientRect();
+      let delta = 0;
+      if (clientY < rect.top + MANAGER_SCROLL_EDGE) {
+        delta = -MANAGER_SCROLL_SPEED;
+      } else if (clientY > rect.bottom - MANAGER_SCROLL_EDGE) {
+        delta = MANAGER_SCROLL_SPEED;
+      }
+
+      if (delta !== 0) {
+        const prev = scroller.scrollTop;
+        scroller.scrollTop = Math.max(0, Math.min(scroller.scrollHeight - scroller.clientHeight, prev + delta));
+        if (scroller.scrollTop !== prev) {
+          updateManagerDragPlaceholder(clientY);
+        }
+      }
+
+      managerDragState.autoScrollRaf = requestAnimationFrame(() => {
+        if (!managerDragState) return;
+        tickManagerAutoScroll(managerDragState.lastClientY);
+      });
+    }
+
+    function bindPresetDragHandle(handle, card) {
+      handle.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (managerDragState) finishManagerDrag();
+        e.preventDefault();
+        e.stopPropagation();
+
+        const rect = card.getBoundingClientRect();
+        const fromIndex = [...presetList.querySelectorAll('.preset-card')].indexOf(card);
+
+        managerDragState = {
+          card,
+          handle,
+          pointerId: e.pointerId,
+          startY: e.clientY,
+          lastClientY: e.clientY,
+          offsetY: e.clientY - rect.top,
+          moved: false,
+          fromIndex,
+          targetIndex: fromIndex,
+          placeholder: null,
+          autoScrollRaf: 0,
+          originParent: card.parentNode,
+          originNext: card.nextSibling
+        };
+
+        handle.setPointerCapture(e.pointerId);
+      });
+
+      handle.addEventListener('pointermove', (e) => {
+        if (!managerDragState || managerDragState.card !== card || managerDragState.pointerId !== e.pointerId) return;
+        managerDragState.lastClientY = e.clientY;
+
+        if (!managerDragState.moved) {
+          if (Math.abs(e.clientY - managerDragState.startY) < MANAGER_DRAG_THRESHOLD) return;
+          managerDragState.moved = true;
+
+          const rect = card.getBoundingClientRect();
+          const placeholder = document.createElement('div');
+          placeholder.className = 'preset-card-placeholder';
+          placeholder.style.height = `${rect.height}px`;
+          card.parentNode.insertBefore(placeholder, card);
+          managerDragState.placeholder = placeholder;
+          managerDragState.offsetY = e.clientY - rect.top;
+
+          card.classList.add('is-dragging');
+          card.style.position = 'fixed';
+          card.style.left = `${rect.left}px`;
+          card.style.width = `${rect.width}px`;
+          card.style.height = `${rect.height}px`;
+          card.style.boxSizing = 'border-box';
+          card.style.zIndex = '60';
+          card.style.pointerEvents = 'none';
+          document.body.appendChild(card);
+
+          managerDragState.autoScrollRaf = requestAnimationFrame(() => {
+            if (!managerDragState) return;
+            tickManagerAutoScroll(managerDragState.lastClientY);
+          });
+        }
+
+        const top = e.clientY - managerDragState.offsetY;
+        card.style.top = `${top}px`;
+        updateManagerDragPlaceholder(e.clientY);
+      });
+
+      handle.addEventListener('pointerup', finishManagerDrag);
+      handle.addEventListener('pointercancel', finishManagerDrag);
+      handle.addEventListener('lostpointercapture', finishManagerDrag);
     }
 
     function escapeHtml(str) {
