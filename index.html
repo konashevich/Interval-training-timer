@@ -283,9 +283,15 @@
           <i data-lucide="pen-tool" class="w-5 h-5 text-emerald-400"></i>
           <h2 class="text-lg font-bold tracking-tight text-white" data-i18n="trainingDesigner">Training Designer</h2>
         </div>
-        <button id="newTrainingBtn" class="text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 transition-colors active:scale-95" data-i18n="newBtn">
-          + New
-        </button>
+        <div class="flex items-center gap-2 shrink-0">
+          <button id="cloneTrainingBtn" type="button" hidden class="inline-flex text-xs font-bold uppercase tracking-wider text-sky-300 hover:text-sky-200 px-3 py-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 transition-colors active:scale-95 items-center gap-1.5">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span data-i18n="cloneBtn">Clone</span>
+          </button>
+          <button id="newTrainingBtn" type="button" class="text-xs font-bold uppercase tracking-wider text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 transition-colors active:scale-95" data-i18n="newBtn">
+            + New
+          </button>
+        </div>
       </div>
 
       <!-- Template preset picker -->
@@ -568,6 +574,9 @@
         tapPlayAudio: 'Tap Play to enable audio',
         trainingDesigner: 'Training Designer',
         newBtn: '+ New',
+        cloneBtn: 'Clone',
+        clonedPresetName: '{name} copy',
+        trainingCloned: 'Cloned as new training',
         totalDuration: 'Total duration:',
         patternSegments: 'Pattern Segments',
         addWork: '+ Work',
@@ -694,6 +703,9 @@
         tapPlayAudio: 'Натисніть Play, щоб увімкнути звук',
         trainingDesigner: 'Конструктор тренування',
         newBtn: '+ Нове',
+        cloneBtn: 'Клон',
+        clonedPresetName: '{name} (копія)',
+        trainingCloned: 'Склоновано як нове тренування',
         totalDuration: 'Загальна тривалість:',
         patternSegments: 'Сегменти патерну',
         addWork: '+ Робота',
@@ -862,6 +874,7 @@
       if (savePresetBtn) {
         savePresetBtn.textContent = designerEditId ? t('updateTraining') : t('saveTraining');
       }
+      updateDesignerActionButtons();
       const designerSteppers = [
         cyclesDecBtn, cyclesIncBtn,
         pitchNormalDecBtn, pitchNormalIncBtn,
@@ -1475,6 +1488,7 @@
       }
 
       resetTemplateSelect();
+      updateDesignerActionButtons();
       renderDesigner();
       showToast(t('templateLoaded', { name: t(template.nameKey) }), 'layout-template');
     }
@@ -1485,6 +1499,12 @@
 
     function clearDesignerModified() {
       designerModified = false;
+    }
+
+    function updateDesignerActionButtons() {
+      const cloneBtn = document.getElementById('cloneTrainingBtn');
+      if (!cloneBtn) return;
+      cloneBtn.hidden = !designerEditId;
     }
 
     function resetDesignerForm() {
@@ -1500,6 +1520,7 @@
       deletePresetBtn.classList.add('hidden');
       savePresetBtn.textContent = t('saveTraining');
       resetTemplateSelect();
+      updateDesignerActionButtons();
     }
 
     function loadDesignerFromPreset(preset) {
@@ -1514,6 +1535,34 @@
       deletePresetBtn.classList.remove('hidden');
       savePresetBtn.textContent = t('updateTraining');
       resetTemplateSelect();
+      updateDesignerActionButtons();
+    }
+
+    function cloneDesignerTraining() {
+      if (!designerDraft || !designerEditId) return;
+
+      const baseName = (presetNameInput.value.trim() || getPresetById(designerEditId)?.name || t('defaultPresetName'));
+      designerDraft = {
+        segments: designerDraft.segments.map(s => normalizeSegment({
+          ...s,
+          id: generateId()
+        })),
+        cycles: designerDraft.cycles,
+        audio: { ...designerDraft.audio }
+      };
+      designerEditId = null;
+      presetNameInput.value = t('clonedPresetName', { name: baseName });
+      presetDefaultCheckbox.checked = false;
+      deletePresetBtn.classList.add('hidden');
+      savePresetBtn.textContent = t('saveTraining');
+      resetTemplateSelect();
+      clearDesignerModified();
+      markDesignerModified();
+      updateDesignerActionButtons();
+      renderDesigner();
+      showToast(t('trainingCloned'), 'copy');
+      presetNameInput.focus();
+      presetNameInput.select();
     }
 
     function updateDesignerSummary() {
@@ -1712,6 +1761,10 @@
       renderDesigner();
     });
 
+    document.getElementById('cloneTrainingBtn').addEventListener('click', () => {
+      cloneDesignerTraining();
+    });
+
     templatePresetSelect.addEventListener('change', () => {
       const id = templatePresetSelect.value;
       if (!id) {
@@ -1827,6 +1880,7 @@
       deletePresetBtn.classList.remove('hidden');
       savePresetBtn.textContent = t('updateTraining');
       clearDesignerModified();
+      updateDesignerActionButtons();
       showToast(t('savedPreset', { name: preset.name }), 'check');
       playBeepTone(preset.audio.pitchNormal, 0.1, false);
       renderManagerList();
