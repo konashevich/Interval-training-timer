@@ -2,8 +2,8 @@
 
 A mobile-friendly interval training timer you can run in any modern browser—or install as a PWA on your phone for fullscreen, home-screen access. Design custom work/rest patterns, save multiple trainings, and follow along with visual and audio cues. No build step required.
 
-**Live app:** [https://timer.konashevych.com/](https://timer.konashevych.com/)  
-Also available at [https://konashevich.github.io/Interval-training-timer/](https://konashevich.github.io/Interval-training-timer/)
+**Live app:** [https://vprava.online/](https://vprava.online/)  
+Also at [https://timer.konashevych.com/](https://timer.konashevych.com/) and [https://konashevich.github.io/Interval-training-timer/](https://konashevich.github.io/Interval-training-timer/)
 
 ## Features
 
