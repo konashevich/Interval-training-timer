@@ -1,0 +1,17 @@
+name = "timer-oauth"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+account_id = "6456893161a09453fcc36d0dcd356052"
+
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "94836cc1e2d645ffa2f16baf0864519c"
+
+[vars]
+# VPRAVA.ONLINE Web OAuth client (Chromium GCP brand; secret via wrangler secret).
+GOOGLE_CLIENT_ID = "215074085861-g6t9gnmla8adtha1seddcuekau85iea9.apps.googleusercontent.com"
+ALLOWED_ORIGINS = "https://vprava.online,https://www.vprava.online,https://timer.konashevych.com,http://localhost:8080,http://127.0.0.1:8080"
+
+[[routes]]
+pattern = "timer-api.konashevych.com/*"
+zone_name = "konashevych.com"

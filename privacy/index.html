@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — VPRAVA.ONLINE</title>
+  <meta name="theme-color" content="#10b981">
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1.25rem; line-height: 1.55; color: #e5e5e5; background: #0a0a0a; }
+    a { color: #34d399; }
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.1rem; margin-top: 1.75rem; }
+  </style>
+</head>
+<body>
+  <p><a href="/">← VPRAVA.ONLINE</a></p>
+  <h1>Privacy Policy</h1>
+  <p>Last updated: 18 July 2026</p>
+  <p>
+    VPRAVA.ONLINE (“the app”) runs in your browser as a static Progressive Web App at
+    <a href="https://vprava.online/">vprava.online</a>
+    (also available at <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
+  </p>
+  <h2>Local data</h2>
+  <p>
+    Trainings, language preference, and similar settings are stored on your device (browser local storage).
+    We do not operate an application database that stores your workouts.
+  </p>
+  <h2>Google Drive (optional)</h2>
+  <p>
+    If you sign in with Google, the app requests access only to files and folders it creates
+    (<code>drive.file</code> scope), plus basic profile information (email) to show which account is linked.
+    Trainings are synced to a folder named <code>timer.konashevych.com</code> in your Google Drive
+    (legacy folder name kept so existing vaults continue to work).
+    Shared links upload a snapshot file that you choose to make readable by anyone with the link.
+  </p>
+  <h2>OAuth session</h2>
+  <p>
+    To keep you signed in without prompting every hour, a Cloudflare Worker at
+    <code>timer-api.konashevych.com</code> stores a refresh token in encrypted/server-side KV,
+    associated with an HttpOnly cookie. Access tokens are returned to your browser only.
+    Signing out revokes that session.
+  </p>
+  <h2>Contact</h2>
+  <p>Questions: <a href="https://t.me/oleksiiko">@oleksiiko</a> on Telegram, or the project GitHub repository.</p>
+</body>
+</html>

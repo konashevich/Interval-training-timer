@@ -1,0 +1,14 @@
+---
+description: Product identity — VPRAVA.ONLINE domain and brand name
+alwaysApply: true
+---
+
+# VPRAVA.ONLINE identity
+
+This project’s product name and primary domain are **VPRAVA.ONLINE** (`https://vprava.online/`).
+
+- Use **VPRAVA.ONLINE** in titles, About, PWA manifest, README, and user-facing copy.
+- Use `vprava.online` in URLs and hostnames.
+- Do not refer to the product as “Interval Training Timer” in new copy (legacy GitHub repo folder name may remain).
+- Legacy host `timer.konashevych.com` may stay as a parallel URL; do not treat it as the primary brand.
+- Drive vault folder id string `timer.konashevych.com` is intentional legacy — do not rename without a migration plan.
