@@ -29,3 +29,10 @@ yarn-debug.log*
 yarn-error.log*
 .cache/
 .specstory/
+
+# Worker deps
+node_modules/
+workers/**/node_modules/
+workers/**/package-lock.json
+workers/**/*.bak*
+.secrets/

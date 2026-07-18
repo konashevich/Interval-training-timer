@@ -40,9 +40,9 @@ Trainings persist in the browser’s `localStorage` on the same device. With Goo
 
 ## Google Drive setup
 
-Operator steps (GCP project **Chromium** `chromium-466007`, Cloudflare Worker, secrets): [docs/google-oauth/README.md](docs/google-oauth/README.md).
+Operator steps (OAuth client on GCP **Chromium** `chromium-466007`, Drive API key on **vprava-online**, Cloudflare Worker): [docs/google-oauth/README.md](docs/google-oauth/README.md).
 
-Until `GOOGLE_CLIENT_ID` is set in [`js/google-drive/config.js`](js/google-drive/config.js), the Google Drive row stays hidden in Settings.
+Google Drive appears in Settings when `GOOGLE_CLIENT_ID` is set in [`js/google-drive/config.js`](js/google-drive/config.js) (configured for production).
 
 ## Tech Stack
 

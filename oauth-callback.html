@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>VPRAVA.ONLINE — Google sign-in</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <script>
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var code = params.get("code");
+        var error = params.get("error");
+        var payload = code
+          ? { type: "interval-timer-oauth", code: code }
+          : { type: "interval-timer-oauth", error: error || "no_code" };
+        if (window.opener) {
+          window.opener.postMessage(payload, window.location.origin);
+          window.close();
+        } else {
+          document.body.textContent = error
+            ? "Sign-in failed. Close this tab and try again from the timer app."
+            : "Sign-in complete. You can close this tab.";
+        }
+      })();
+    </script>
+  </body>
+</html>

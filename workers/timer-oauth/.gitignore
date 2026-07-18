@@ -1,0 +1,6 @@
+tsconfig.json
+node_modules
+.wrangler
+.dev.vars
+*.bak*
+package-lock.json
