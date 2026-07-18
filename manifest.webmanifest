@@ -1,7 +1,7 @@
 {
-  "name": "Interval Training Timer",
-  "short_name": "Timer",
-  "description": "Design and run interval training workouts",
+  "name": "VPRAVA.ONLINE",
+  "short_name": "VPRAVA",
+  "description": "Interval training timer — design and run work/rest workouts",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
