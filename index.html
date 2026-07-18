@@ -703,6 +703,7 @@
         allDone: 'All Done!',
         readyToStart: 'Ready To Start',
         getReady: 'Get Ready',
+        go: 'Go',
         presetSubtitle: '{cycles} cycles · {total} total',
         storageFull: 'Could not save — storage full?',
         cannotDeleteLast: 'Cannot delete the last training',
@@ -836,6 +837,7 @@
         allDone: 'Усе готово!',
         readyToStart: 'Готово до старту',
         getReady: 'Приготуйтесь',
+        go: 'Марш',
         presetSubtitle: '{cycles} циклів · {total} загалом',
         storageFull: 'Не вдалося зберегти — сховище переповнене?',
         cannotDeleteLast: 'Неможливо видалити останнє тренування',
@@ -1529,7 +1531,7 @@
     // --- App state ---
     // =========================================================================
 
-    const PREP_SECONDS = 5;
+    const PREP_SECONDS = 3;
 
     let activePreset = null;
     let timerState = {
@@ -2662,7 +2664,7 @@
         transitionTimeoutId = null;
         transitionPending = false;
         if (!timerState.isRunning) return;
-        activateFirstSegment({ playStartCue: false });
+        activateFirstSegment({ playStartCue: true });
       }, delayMs);
     }
 
@@ -2811,6 +2813,8 @@
 
       if (timerState.currentPhase === 'completed') {
         countdownText.textContent = '✓';
+      } else if (timerState.currentPhase === 'prep' && timerState.currentSecond <= 0) {
+        countdownText.textContent = t('go');
       } else {
         countdownText.textContent = timerState.currentSecond;
       }
@@ -2829,9 +2833,10 @@
         stateBadge.className = "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-amber-500/10 border border-amber-500/30 text-amber-400 transition-all duration-300";
         phaseText.textContent = kind === 'rest' ? t('pauseCycle') : label;
       } else if (timerState.currentPhase === 'prep') {
-        stateBadge.textContent = t('getReady');
+        const prepLabel = timerState.currentSecond <= 0 ? t('go') : t('getReady');
+        stateBadge.textContent = prepLabel;
         stateBadge.className = "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-sky-500/10 border border-sky-500/30 text-sky-400 transition-all duration-300";
-        phaseText.textContent = t('getReady');
+        phaseText.textContent = prepLabel;
       } else if (timerState.currentPhase === 'completed') {
         stateBadge.textContent = t('completed');
         stateBadge.className = "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-violet-500/10 border border-violet-500/30 text-violet-400 transition-all duration-300";
@@ -2909,7 +2914,7 @@
           schedulePrepTransition(1000);
           updateUI();
         } else {
-          activateFirstSegment({ playStartCue: false });
+          activateFirstSegment({ playStartCue: true });
         }
         return;
       }
@@ -2987,9 +2992,10 @@
       togglePlayButtonIcon(true);
       audioAlert.classList.add('hidden');
 
-      // Resume after pause during the post-"1" go hold: finish handoff without a second delay.
+      // Resume after pause during the Go hold: replay the Go beat, then start.
       if (timerState.currentPhase === 'prep' && timerState.currentSecond <= 0) {
-        activateFirstSegment({ playStartCue: false });
+        updateUI();
+        schedulePrepTransition(1000);
         return;
       }
 
