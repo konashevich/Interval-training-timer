@@ -82,6 +82,10 @@
       font-size: clamp(2.75rem, 16vw, 5rem);
       line-height: 1;
     }
+    #countdownText.is-go {
+      font-size: clamp(2.25rem, 12vw, 3.75rem);
+      letter-spacing: 0.06em;
+    }
     .tab-btn-side.active { color: rgb(52 211 153); }
     .tab-btn-side.active .tab-icon-wrap {
       background-color: rgba(16, 185, 129, 0.15);
@@ -2668,6 +2672,14 @@
       }, delayMs);
     }
 
+    function beginGoHold() {
+      playBeepTone(getPitchHeavy(), 0.45, true);
+      triggerFlash('heavy');
+      timerState.currentSecond = 0;
+      schedulePrepTransition(1000);
+      updateUI();
+    }
+
     function restartTickInterval() {
       if (timerState.intervalId != null) {
         clearInterval(timerState.intervalId);
@@ -2780,7 +2792,8 @@
       if (timerState.currentPhase === 'active' && seg && seg.duration > 0) {
         percentage = timerState.currentSecond / seg.duration;
       } else if (timerState.currentPhase === 'prep') {
-        percentage = timerState.currentSecond / PREP_SECONDS;
+        // Keep the ring full on the Go beat so an empty dial does not look broken.
+        percentage = timerState.currentSecond <= 0 ? 1 : timerState.currentSecond / PREP_SECONDS;
       } else if (timerState.currentPhase === 'idle' && seg) {
         percentage = 1;
       } else if (timerState.currentPhase === 'completed') {
@@ -2813,10 +2826,14 @@
 
       if (timerState.currentPhase === 'completed') {
         countdownText.textContent = '✓';
+        countdownText.classList.remove('is-go');
       } else if (timerState.currentPhase === 'prep' && timerState.currentSecond <= 0) {
-        countdownText.textContent = t('go');
+        // Short Latin "Go" stays readable in the dial; localized word goes on the badge.
+        countdownText.textContent = 'Go';
+        countdownText.classList.add('is-go');
       } else {
         countdownText.textContent = timerState.currentSecond;
+        countdownText.classList.remove('is-go');
       }
 
       roundProgress.innerHTML = `${timerState.cycleIndex} <span class="text-neutral-500 font-normal">/</span> ${activePreset.cycles}`;
@@ -2908,11 +2925,7 @@
           timerState.currentSecond--;
           updateUI();
         } else if (timerState.currentSecond === 1) {
-          playBeepTone(getPitchHeavy(), 0.45, true);
-          triggerFlash('heavy');
-          timerState.currentSecond = 0;
-          schedulePrepTransition(1000);
-          updateUI();
+          beginGoHold();
         } else {
           activateFirstSegment({ playStartCue: true });
         }
@@ -2992,10 +3005,9 @@
       togglePlayButtonIcon(true);
       audioAlert.classList.add('hidden');
 
-      // Resume after pause during the Go hold: replay the Go beat, then start.
+      // Resume after pause during the Go hold: replay the Go cue, then start.
       if (timerState.currentPhase === 'prep' && timerState.currentSecond <= 0) {
-        updateUI();
-        schedulePrepTransition(1000);
+        beginGoHold();
         return;
       }
 
