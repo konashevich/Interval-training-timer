@@ -155,7 +155,7 @@ flowchart LR
 
 ## Risk notes
 
-- **Google OAuth verification:** `drive.file` is typically non-sensitive; consent branding must match VPRAVA.ONLINE.
+- **Google OAuth verification:** Chromium brand is already **In production** / External (same as diagrams.free). The “unverified app” interstitial still appears for `drive.file` until scopes are approved — Google’s Audience page shows the 100-user unverified cap (diagrams.free has the same cap). Publishing alone does not remove that screen; use Advanced → Continue for test/dev, or submit Verification centre if you need the warning gone.
 - **Billing:** link a billing account to `vprava-online` if Google requires it for API quotas.
 - **Legacy vaults:** users who already synced under folder `timer.konashevych.com` need a read-fallback or one-time migration to `vprava.online/`.
 - **PWA token refresh:** Worker cookie must be `Secure`, `HttpOnly`, `SameSite=None` for `api.vprava.online` ↔ `vprava.online`.
