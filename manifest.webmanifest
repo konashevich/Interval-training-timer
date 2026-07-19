@@ -1,7 +1,7 @@
 {
   "name": "VPRAVA.ONLINE",
-  "short_name": "VPRAVA",
-  "description": "Interval training timer — design and run work/rest workouts",
+  "short_name": "VPRAVA.ONLINE",
+  "description": "VPRAVA.ONLINE is a browser interval training timer. Design custom work/rest patterns and run workouts with visual and audio cues.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

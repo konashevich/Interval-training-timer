@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>VPRAVA.ONLINE</title>
+  <title>VPRAVA.ONLINE — Interval training timer</title>
+  <meta name="description" content="VPRAVA.ONLINE is a browser interval training timer. Design custom work/rest patterns and run workouts with visual and audio cues. Optional Google Drive sync keeps trainings in your own Drive folder.">
+  <meta name="application-name" content="VPRAVA.ONLINE">
   <link rel="manifest" href="/manifest.webmanifest">
   <meta name="theme-color" content="#10b981">
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
@@ -13,7 +15,7 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="VPRAVA">
+  <meta name="apple-mobile-web-app-title" content="VPRAVA.ONLINE">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -265,6 +267,7 @@
       <img src="/icons/logo.svg" alt="" class="w-8 h-8 rounded-lg shrink-0" width="32" height="32">
       <div class="min-w-0">
         <h1 class="text-sm font-extrabold tracking-wider text-neutral-400 uppercase" data-i18n="appTitle">VPRAVA.ONLINE</h1>
+        <p class="text-[10px] text-neutral-500 leading-snug max-w-[220px]" data-i18n="appTagline">Interval training timer — custom work/rest patterns with visual and audio cues.</p>
         <button id="activeTrainingBtn" class="text-xs font-semibold text-emerald-400 truncate max-w-[200px] hover:text-emerald-300 transition-colors">
           <span id="activeTrainingName">Default</span>
         </button>
@@ -715,6 +718,7 @@
     const STRINGS = {
       en: {
         appTitle: 'VPRAVA.ONLINE',
+        appTagline: 'Interval training timer — custom work/rest patterns with visual and audio cues.',
         ready: 'Ready',
         cycle: 'Cycle',
         tapPlayAudio: 'Tap Play to enable audio',
@@ -883,6 +887,7 @@
       },
       uk: {
         appTitle: 'VPRAVA.ONLINE',
+        appTagline: 'Таймер інтервальних тренувань — власні work/rest патерни з візуальними та звуковими підказками.',
         ready: 'Готово',
         cycle: 'Цикл',
         tapPlayAudio: 'Натисніть Play, щоб увімкнути звук',
