@@ -136,6 +136,16 @@
       border-color: rgba(245, 158, 11, 0.5);
       color: rgb(251 191 36);
     }
+    .kind-pill.active-reps {
+      background-color: rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: rgb(125 211 252);
+    }
+    .phase-pill.active-phase {
+      background-color: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: rgb(52 211 153);
+    }
     .pb-safe { padding-bottom: var(--tab-bar-inset); }
     #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; transition: bottom 0.2s ease, margin-bottom 0.2s ease; }
     #updateBanner { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
@@ -386,6 +396,9 @@
         <div class="flex gap-2 mt-3">
           <button id="addWorkBtn" class="flex-1 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-colors active:scale-98" data-i18n="addWork">
             + Work
+          </button>
+          <button id="addRepsBtn" class="flex-1 py-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-300 text-xs font-bold uppercase tracking-wider hover:bg-sky-500/20 transition-colors active:scale-98" data-i18n="addReps">
+            + Reps
           </button>
           <button id="addRestBtn" class="flex-1 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs font-bold uppercase tracking-wider hover:bg-amber-500/20 transition-colors active:scale-98" data-i18n="addRest">
             + Rest
@@ -734,6 +747,7 @@
         totalDuration: 'Total duration:',
         patternSegments: 'Pattern Segments',
         addWork: '+ Work',
+        addReps: '+ Reps',
         addRest: '+ Rest',
         cycles: 'Cycles',
         cyclesCount: '{n} cycles',
@@ -762,6 +776,18 @@
         badgeActive: 'Active',
         work: 'Work',
         rest: 'Rest',
+        workModeTime: 'Time',
+        workModeReps: 'Reps',
+        reps: 'Reps',
+        repsCount: '{n} reps',
+        phaseOrder: 'Pattern',
+        phaseDownThenUp: 'Down → Up',
+        phaseUpThenDown: 'Up → Down',
+        phaseDownThenUpHint: 'Easy down, strain up — squat, push-up',
+        phaseUpThenDownHint: 'Strain up, release down — pull-up',
+        phaseDown: 'Down',
+        phaseUp: 'Up',
+        secondsDecimal: '{n}s',
         duration: 'Duration',
         pace: 'Pace',
         previewPace: 'Preview block',
@@ -785,6 +811,11 @@
         getReady: 'Get Ready',
         go: 'Go',
         presetSubtitle: '{cycles} cycles · {total} total',
+        presetSubtitleReps: '{reps} reps · {total} total',
+        catalogPushups15: '15 Push-ups',
+        templatePushups: '15 Push-ups',
+        templatePushupsDesc: '15 push-ups with down/up sounds — easy down, strain up',
+        pushupsLabel: 'Push-ups',
         storageFull: 'Could not save — storage full?',
         cannotDeleteLast: 'Cannot delete the last training',
         timerRunningConfirm: 'Timer is running. Pause and switch?',
@@ -903,6 +934,7 @@
         totalDuration: 'Загальна тривалість:',
         patternSegments: 'Сегменти патерну',
         addWork: '+ Робота',
+        addReps: '+ Повтори',
         addRest: '+ Відпочинок',
         cycles: 'Цикли',
         cyclesCount: '{n} циклів',
@@ -931,6 +963,18 @@
         badgeActive: 'Активне',
         work: 'Робота',
         rest: 'Відпочинок',
+        workModeTime: 'Час',
+        workModeReps: 'Повтори',
+        reps: 'Повтори',
+        repsCount: '{n} повторів',
+        phaseOrder: 'Патерн',
+        phaseDownThenUp: 'Вниз → Вгору',
+        phaseUpThenDown: 'Вгору → Вниз',
+        phaseDownThenUpHint: 'Легко вниз, напруження вгору — присід, віджимання',
+        phaseUpThenDownHint: 'Напруження вгору, відпускання вниз — підтягування',
+        phaseDown: 'Вниз',
+        phaseUp: 'Вгору',
+        secondsDecimal: '{n} с',
         duration: 'Тривалість',
         pace: 'Темп',
         previewPace: 'Прослухати блок',
@@ -954,6 +998,11 @@
         getReady: 'Приготуйтесь',
         go: 'Марш',
         presetSubtitle: '{cycles} циклів · {total} загалом',
+        presetSubtitleReps: '{reps} повторів · {total} загалом',
+        catalogPushups15: '15 віджимань',
+        templatePushups: '15 віджимань',
+        templatePushupsDesc: '15 віджимань із звуками вниз/вгору — легко вниз, напруження вгору',
+        pushupsLabel: 'Віджимання',
         storageFull: 'Не вдалося зберегти — сховище переповнене?',
         cannotDeleteLast: 'Неможливо видалити останнє тренування',
         timerRunningConfirm: 'Таймер працює. Призупинити та перейти?',
@@ -1166,7 +1215,10 @@
     }
 
     function applyDynamicI18n() {
-      if (activePreset) updateUI();
+      if (activePreset) {
+        updateUI();
+        if (activeTrainingName) activeTrainingName.textContent = resolvePresetName(activePreset);
+      }
       renderManagerList();
       if (designerDraft) {
         updateDesignerSummary();
@@ -1200,16 +1252,115 @@
     const PACE_MAX = 4;
     const PACE_STEP = 0.25;
     const PACE_DEFAULT = 1;
+    const REPS_MIN = 1;
+    const REPS_MAX = 100;
+    const PHASE_MS_MIN = 200;
+    const PHASE_MS_MAX = 2000;
+    const PHASE_MS_STEP = 50;
+    const PHASE_MS_DEFAULT = 500;
+    const CATALOG_PUSHUPS_ID = 'catalog-pushups-15';
 
     function createSegment(kind, duration, label, labelKey) {
-      const seg = { id: generateId(), kind, duration, pace: PACE_DEFAULT, label: label || '' };
+      const seg = {
+        id: generateId(),
+        kind,
+        mode: 'time',
+        duration,
+        pace: PACE_DEFAULT,
+        label: label || ''
+      };
       if (labelKey) seg.labelKey = labelKey;
-      return seg;
+      return normalizeSegment(seg);
+    }
+
+    function createRepsSegment({
+      reps = 10,
+      phaseOrder = 'down_then_up',
+      downMs = PHASE_MS_DEFAULT,
+      upMs = PHASE_MS_DEFAULT,
+      label = '',
+      labelKey = null
+    } = {}) {
+      const seg = {
+        id: generateId(),
+        kind: 'work',
+        mode: 'reps',
+        duration: reps,
+        reps,
+        phaseOrder,
+        downMs,
+        upMs,
+        pace: PACE_DEFAULT,
+        label: label || ''
+      };
+      if (labelKey) seg.labelKey = labelKey;
+      return normalizeSegment(seg);
+    }
+
+    function isRepsSegment(seg) {
+      return !!(seg && seg.kind === 'work' && seg.mode === 'reps');
+    }
+
+    function getRepsCount(seg) {
+      const raw = Number(seg && (seg.reps != null ? seg.reps : seg.duration));
+      if (!Number.isFinite(raw)) return REPS_MIN;
+      return Math.max(REPS_MIN, Math.round(raw));
+    }
+
+    function getPhaseOrder(seg) {
+      return seg && seg.phaseOrder === 'up_then_down' ? 'up_then_down' : 'down_then_up';
+    }
+
+    function getFirstPhase(seg) {
+      return getPhaseOrder(seg) === 'up_then_down' ? 'up' : 'down';
+    }
+
+    function isStrainPhase(_seg, phase) {
+      return phase === 'up';
+    }
+
+    function getDownMs(seg) {
+      const raw = Number(seg && seg.downMs);
+      if (!Number.isFinite(raw)) return PHASE_MS_DEFAULT;
+      return clampSliderValue(raw, PHASE_MS_MIN, PHASE_MS_MAX, PHASE_MS_STEP);
+    }
+
+    function getUpMs(seg) {
+      const raw = Number(seg && seg.upMs);
+      if (!Number.isFinite(raw)) return PHASE_MS_DEFAULT;
+      return clampSliderValue(raw, PHASE_MS_MIN, PHASE_MS_MAX, PHASE_MS_STEP);
+    }
+
+    function getPhaseMs(seg, phase) {
+      return phase === 'up' ? getUpMs(seg) : getDownMs(seg);
+    }
+
+    function isSegmentSkipped(seg) {
+      if (!seg) return true;
+      if (isRepsSegment(seg)) return getRepsCount(seg) <= 0;
+      return !seg.duration || seg.duration <= 0;
     }
 
     function normalizeSegment(seg) {
+      if (!seg || typeof seg !== 'object') return createSegment('work', 10);
+      if (seg.kind !== 'rest') seg.kind = 'work';
+      if (seg.kind === 'rest') seg.mode = 'time';
+      else if (seg.mode === 'reps') seg.mode = 'reps';
+      else seg.mode = 'time';
+
       if (!seg.pace || seg.pace < PACE_MIN) seg.pace = PACE_DEFAULT;
       seg.pace = clampSliderValue(seg.pace, PACE_MIN, PACE_MAX, PACE_STEP);
+
+      if (isRepsSegment(seg)) {
+        seg.reps = clampSliderValue(getRepsCount(seg), REPS_MIN, REPS_MAX, 1);
+        seg.duration = seg.reps;
+        seg.phaseOrder = getPhaseOrder(seg);
+        seg.downMs = getDownMs(seg);
+        seg.upMs = getUpMs(seg);
+      } else {
+        const dur = Number(seg.duration);
+        seg.duration = Number.isFinite(dur) ? Math.max(seg.kind === 'work' ? 1 : 0, Math.round(dur)) : (seg.kind === 'work' ? 10 : 0);
+      }
       return seg;
     }
 
@@ -1223,16 +1374,29 @@
     }
 
     function getSegmentTickMs(seg) {
+      if (isRepsSegment(seg)) return getPhaseMs(seg, getFirstPhase(seg));
       return Math.round(1000 / getSegmentPace(seg));
     }
 
     function getSegmentRealSeconds(seg) {
-      if (!seg || seg.duration <= 0) return 0;
+      if (!seg || isSegmentSkipped(seg)) return 0;
+      if (isRepsSegment(seg)) {
+        return (getRepsCount(seg) * (getDownMs(seg) + getUpMs(seg))) / 1000;
+      }
       return seg.duration / getSegmentPace(seg);
     }
 
     function formatPace(pace) {
       return t('paceMultiplier', { n: parseFloat(Number(pace).toFixed(2)) });
+    }
+
+    function formatPhaseSeconds(ms) {
+      return t('secondsDecimal', { n: (Number(ms) / 1000).toFixed(2) });
+    }
+
+    function resolvePresetName(preset) {
+      if (preset && preset.nameKey) return t(preset.nameKey);
+      return (preset && preset.name) || t('defaultPresetName');
     }
 
     function createDefaultPreset() {
@@ -1254,13 +1418,52 @@
       };
     }
 
+    function buildCatalogPushupsPreset() {
+      const now = Date.now();
+      return {
+        id: CATALOG_PUSHUPS_ID,
+        name: t('catalogPushups15'),
+        nameKey: 'catalogPushups15',
+        isDefault: false,
+        sortOrder: 1,
+        createdAt: now,
+        updatedAt: now,
+        cycles: 1,
+        segments: [
+          createRepsSegment({
+            reps: 15,
+            phaseOrder: 'down_then_up',
+            downMs: 450,
+            upMs: 550,
+            labelKey: 'pushupsLabel'
+          })
+        ],
+        audio: { pitchNormal: 640, pitchHeavy: 1180 }
+      };
+    }
+
+    function ensureCatalogPresets() {
+      if (!appStore || !Array.isArray(appStore.presets)) return false;
+      ensureDeletedTrainingsArray();
+      if (getPresetById(CATALOG_PUSHUPS_ID)) return false;
+      if (getDeletedTrainings().some(entry => entry.id === CATALOG_PUSHUPS_ID)) return false;
+      const preset = buildCatalogPushupsPreset();
+      const maxOrder = appStore.presets.reduce((max, p) => (
+        Math.max(max, typeof p.sortOrder === 'number' ? p.sortOrder : -1)
+      ), -1);
+      preset.sortOrder = maxOrder + 1;
+      appStore.presets.push(preset);
+      return true;
+    }
+
     function createSeedStore() {
       const preset = createDefaultPreset();
+      const pushups = buildCatalogPushupsPreset();
       return {
         version: 1,
         defaultPresetId: preset.id,
         activePresetId: preset.id,
-        presets: [preset],
+        presets: [preset, pushups],
         deletedTrainings: []
       };
     }
@@ -1318,7 +1521,9 @@
         appStore = data;
         appStore.presets = appStore.presets.map(normalizePreset);
         ensureDeletedTrainingsArray();
-        ensurePresetSortOrder(true);
+        const didSort = ensurePresetSortOrder(false);
+        const didCatalog = ensureCatalogPresets();
+        if (didSort || didCatalog) saveStore(appStore);
         return appStore;
       } catch (e) {
         console.warn('Corrupt storage, resetting.', e);
@@ -1784,6 +1989,15 @@
 
     function getPresetSubtitle(preset) {
       const total = formatDuration(getPresetTotalSeconds(preset));
+      const repsTotal = preset.segments.reduce((sum, seg) => (
+        sum + (isRepsSegment(seg) ? getRepsCount(seg) : 0)
+      ), 0);
+      const onlyRepsWork = repsTotal > 0 && preset.segments.every(seg => (
+        seg.kind === 'rest' || isRepsSegment(seg)
+      ));
+      if (onlyRepsWork) {
+        return t('presetSubtitleReps', { reps: repsTotal * preset.cycles, total });
+      }
       return t('presetSubtitle', { cycles: preset.cycles, total });
     }
 
@@ -1806,7 +2020,12 @@
       currentSecond: 10,
       currentPhase: 'idle',
       isRunning: false,
-      intervalId: null
+      intervalId: null,
+      repIndex: 1,
+      repPhase: 'down',
+      phaseDurationMs: 0,
+      phaseRemainingMs: 0,
+      phaseStartedAt: 0
     };
 
     let designerEditId = null;
@@ -1820,6 +2039,9 @@
     let transitionPending = false;
     let completionBeepIds = [];
     let pacePreviewIds = [];
+    let repsPhaseTimeoutId = null;
+    let repsRafId = null;
+    let activeSweepStops = [];
 
     // =========================================================================
     // --- DOM Elements ---
@@ -1963,6 +2185,22 @@
 
     const TRAINING_TEMPLATES = [
       {
+        id: 'pushups15',
+        nameKey: 'templatePushups',
+        descKey: 'templatePushupsDesc',
+        cycles: 1,
+        audio: { pitchNormal: 640, pitchHeavy: 1180 },
+        segments: [{
+          kind: 'work',
+          mode: 'reps',
+          reps: 15,
+          phaseOrder: 'down_then_up',
+          downMs: 450,
+          upMs: 550,
+          labelKey: 'pushupsLabel'
+        }]
+      },
+      {
         id: 'tabata',
         nameKey: 'templateTabata',
         descKey: 'templateTabataDesc',
@@ -2104,7 +2342,18 @@
       designerEditId = null;
       clearDesignerModified();
       designerDraft = {
-        segments: template.segments.map(s => createSegment(s.kind, s.duration, '', s.labelKey || null)),
+        segments: template.segments.map((s) => {
+          if (s.mode === 'reps') {
+            return createRepsSegment({
+              reps: s.reps,
+              phaseOrder: s.phaseOrder,
+              downMs: s.downMs,
+              upMs: s.upMs,
+              labelKey: s.labelKey || null
+            });
+          }
+          return createSegment(s.kind, s.duration, '', s.labelKey || null);
+        }),
         cycles: template.cycles,
         audio: { ...template.audio }
       };
@@ -2163,7 +2412,7 @@
         cycles: preset.cycles,
         audio: { ...preset.audio }
       };
-      presetNameInput.value = preset.name;
+      presetNameInput.value = resolvePresetName(preset);
       presetDefaultCheckbox.checked = preset.isDefault;
       deletePresetBtn.classList.remove('hidden');
       savePresetBtn.textContent = t('updateTraining');
@@ -2253,27 +2502,21 @@
 
         const workActive = seg.kind === 'work' ? 'active-work' : '';
         const restActive = seg.kind === 'rest' ? 'active-rest' : '';
+        const repsMode = isRepsSegment(seg);
         const durMin = seg.kind === 'work' ? 1 : 0;
         const durMax = 300;
+        const timeModeActive = seg.kind === 'work' && !repsMode ? 'active-work' : '';
+        const repsModeActive = repsMode ? 'active-reps' : '';
+        const downFirst = getPhaseOrder(seg) !== 'up_then_down';
 
-        row.innerHTML = `
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex gap-1">
-              <button type="button" class="kind-pill kind-work px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${workActive}" data-action="kind" data-kind="work">${t('work')}</button>
-              <button type="button" class="kind-pill kind-rest px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${restActive}" data-action="kind" data-kind="rest">${t('rest')}</button>
-            </div>
-            <div class="flex items-center gap-1">
-              <button type="button" class="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors ${index === 0 ? 'opacity-30 pointer-events-none' : ''}" data-action="up" aria-label="${t('moveUp')}">
-                <i data-lucide="chevron-up" class="w-4 h-4"></i>
-              </button>
-              <button type="button" class="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors ${index === designerDraft.segments.length - 1 ? 'opacity-30 pointer-events-none' : ''}" data-action="down" aria-label="${t('moveDown')}">
-                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-              </button>
-              <button type="button" class="p-1.5 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ${designerDraft.segments.length <= 1 ? 'opacity-30 pointer-events-none' : ''}" data-action="delete" aria-label="${t('deleteSegment')}">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
-            </div>
+        const modeRow = seg.kind === 'work' ? `
+          <div class="flex gap-1 mb-3">
+            <button type="button" class="kind-pill px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${timeModeActive}" data-action="mode" data-mode="time">${t('workModeTime')}</button>
+            <button type="button" class="kind-pill px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${repsModeActive}" data-action="mode" data-mode="reps">${t('workModeReps')}</button>
           </div>
+        ` : '';
+
+        const timeBody = `
           <div class="flex justify-between items-center mb-1">
             <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('duration')}</span>
             <div class="flex items-center gap-1.5">
@@ -2301,6 +2544,79 @@
               <input type="range" class="pace-slider range-slider" min="${PACE_MIN}" max="${PACE_MAX}" step="${PACE_STEP}" value="${seg.pace}">
             </div>
           </div>
+        `;
+
+        const repsBody = `
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('reps')}</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" class="reps-dec stepper-btn" aria-label="${t('decrease')}">−</button>
+              <span class="reps-val text-xs font-mono font-bold text-sky-300 min-w-[4.5rem] text-center">${t('repsCount', { n: getRepsCount(seg) })}</span>
+              <button type="button" class="reps-inc stepper-btn" aria-label="${t('increase')}">+</button>
+              <button type="button" class="pace-preview-btn p-1.5 rounded-lg text-neutral-400 hover:text-sky-300 hover:bg-sky-500/10 transition-colors" aria-label="${t('previewPace')}" title="${t('previewPace')}">
+                <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+          <div class="range-slider-wrap">
+            <input type="range" class="reps-slider range-slider" min="${REPS_MIN}" max="${REPS_MAX}" step="1" value="${getRepsCount(seg)}">
+          </div>
+          <div class="mt-3 pt-3 border-t border-neutral-800/80">
+            <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('phaseOrder')}</span>
+            <div class="flex gap-1 mt-2">
+              <button type="button" class="phase-pill px-3 py-1.5 rounded-lg border border-neutral-700 text-[10px] font-bold uppercase ${downFirst ? 'active-phase' : ''}" data-action="phase-order" data-order="down_then_up">${t('phaseDownThenUp')}</button>
+              <button type="button" class="phase-pill px-3 py-1.5 rounded-lg border border-neutral-700 text-[10px] font-bold uppercase ${downFirst ? '' : 'active-phase'}" data-action="phase-order" data-order="up_then_down">${t('phaseUpThenDown')}</button>
+            </div>
+            <p class="text-[11px] text-neutral-500 mt-1.5 leading-relaxed">${downFirst ? t('phaseDownThenUpHint') : t('phaseUpThenDownHint')}</p>
+          </div>
+          <div class="mt-3 pt-3 border-t border-neutral-800/80">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('phaseDown')}</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" class="down-dec stepper-btn" aria-label="${t('decrease')}">−</button>
+                <span class="down-val text-xs font-mono font-bold text-amber-300 min-w-[3.5rem] text-center">${formatPhaseSeconds(getDownMs(seg))}</span>
+                <button type="button" class="down-inc stepper-btn" aria-label="${t('increase')}">+</button>
+              </div>
+            </div>
+            <div class="range-slider-wrap">
+              <input type="range" class="down-slider range-slider" min="${PHASE_MS_MIN}" max="${PHASE_MS_MAX}" step="${PHASE_MS_STEP}" value="${getDownMs(seg)}">
+            </div>
+          </div>
+          <div class="mt-2">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('phaseUp')}</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" class="up-dec stepper-btn" aria-label="${t('decrease')}">−</button>
+                <span class="up-val text-xs font-mono font-bold text-emerald-400 min-w-[3.5rem] text-center">${formatPhaseSeconds(getUpMs(seg))}</span>
+                <button type="button" class="up-inc stepper-btn" aria-label="${t('increase')}">+</button>
+              </div>
+            </div>
+            <div class="range-slider-wrap">
+              <input type="range" class="up-slider range-slider" min="${PHASE_MS_MIN}" max="${PHASE_MS_MAX}" step="${PHASE_MS_STEP}" value="${getUpMs(seg)}">
+            </div>
+          </div>
+        `;
+
+        row.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex gap-1">
+              <button type="button" class="kind-pill kind-work px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${workActive}" data-action="kind" data-kind="work">${t('work')}</button>
+              <button type="button" class="kind-pill kind-rest px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${restActive}" data-action="kind" data-kind="rest">${t('rest')}</button>
+            </div>
+            <div class="flex items-center gap-1">
+              <button type="button" class="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors ${index === 0 ? 'opacity-30 pointer-events-none' : ''}" data-action="up" aria-label="${t('moveUp')}">
+                <i data-lucide="chevron-up" class="w-4 h-4"></i>
+              </button>
+              <button type="button" class="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition-colors ${index === designerDraft.segments.length - 1 ? 'opacity-30 pointer-events-none' : ''}" data-action="down" aria-label="${t('moveDown')}">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+              </button>
+              <button type="button" class="p-1.5 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors ${designerDraft.segments.length <= 1 ? 'opacity-30 pointer-events-none' : ''}" data-action="delete" aria-label="${t('deleteSegment')}">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+          ${modeRow}
+          ${repsMode ? repsBody : timeBody}
           <div class="mt-2">
             <input type="text" class="label-input w-full px-3 py-1.5 rounded-lg bg-neutral-950 border border-neutral-800 text-xs text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-emerald-500/30" placeholder="${t('optionalLabel')}" value="${escapeHtml(resolveSegmentLabel(seg)).replace(/"/g, '&quot;')}" maxlength="30">
           </div>
@@ -2310,7 +2626,42 @@
         kindBtns.forEach(btn => {
           btn.addEventListener('click', () => {
             seg.kind = btn.dataset.kind;
-            if (seg.kind === 'work' && seg.duration < 1) seg.duration = 1;
+            if (seg.kind === 'rest') {
+              seg.mode = 'time';
+              if (seg.duration < 0) seg.duration = 0;
+            } else if (seg.duration < 1) {
+              seg.duration = 1;
+            }
+            markDesignerModified();
+            renderDesigner();
+          });
+        });
+
+        row.querySelectorAll('[data-action="mode"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            if (btn.dataset.mode === 'reps') {
+              const nextReps = clampSliderValue(seg.reps || seg.duration || 10, REPS_MIN, REPS_MAX, 1);
+              Object.assign(seg, createRepsSegment({
+                reps: nextReps,
+                phaseOrder: seg.phaseOrder,
+                downMs: seg.downMs,
+                upMs: seg.upMs,
+                label: seg.label,
+                labelKey: seg.labelKey || null
+              }));
+              seg.id = row.dataset.segmentId;
+            } else {
+              seg.mode = 'time';
+              seg.duration = Math.max(1, getRepsCount(seg));
+            }
+            markDesignerModified();
+            renderDesigner();
+          });
+        });
+
+        row.querySelectorAll('[data-action="phase-order"]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            seg.phaseOrder = btn.dataset.order;
             markDesignerModified();
             renderDesigner();
           });
@@ -2344,48 +2695,95 @@
           }
         });
 
-        const slider = row.querySelector('.dur-slider');
-        const durVal = row.querySelector('.dur-val');
-        const durDec = row.querySelector('.dur-dec');
-        const durInc = row.querySelector('.dur-inc');
-        const durController = bindTouchFriendlySlider(slider, {
-          min: durMin,
-          max: durMax,
-          step: 1,
-          onValueChange: (value) => {
-            seg.duration = value;
-            durVal.textContent = formatSegmentDuration(value);
-            durSteppers.syncDisabled(value);
-            updateDesignerSummary();
-            markDesignerModified();
-          }
-        });
-        const durSteppers = bindStepperButtons(durDec, durInc, durController, { min: durMin, max: durMax, step: 1 });
-        durSteppers.syncDisabled(seg.duration);
+        if (repsMode) {
+          const repsSlider = row.querySelector('.reps-slider');
+          const repsVal = row.querySelector('.reps-val');
+          const repsDec = row.querySelector('.reps-dec');
+          const repsInc = row.querySelector('.reps-inc');
+          const repsController = bindTouchFriendlySlider(repsSlider, {
+            min: REPS_MIN,
+            max: REPS_MAX,
+            step: 1,
+            onValueChange: (value) => {
+              seg.reps = value;
+              seg.duration = value;
+              repsVal.textContent = t('repsCount', { n: value });
+              repsSteppers.syncDisabled(value);
+              updateDesignerSummary();
+              markDesignerModified();
+            }
+          });
+          const repsSteppers = bindStepperButtons(repsDec, repsInc, repsController, { min: REPS_MIN, max: REPS_MAX, step: 1 });
+          repsSteppers.syncDisabled(getRepsCount(seg));
 
-        const paceSlider = row.querySelector('.pace-slider');
-        const paceVal = row.querySelector('.pace-val');
-        const paceDec = row.querySelector('.pace-dec');
-        const paceInc = row.querySelector('.pace-inc');
+          const bindPhaseControl = (prefix, field) => {
+            const slider = row.querySelector(`.${prefix}-slider`);
+            const valEl = row.querySelector(`.${prefix}-val`);
+            const dec = row.querySelector(`.${prefix}-dec`);
+            const inc = row.querySelector(`.${prefix}-inc`);
+            const controller = bindTouchFriendlySlider(slider, {
+              min: PHASE_MS_MIN,
+              max: PHASE_MS_MAX,
+              step: PHASE_MS_STEP,
+              onValueChange: (value) => {
+                seg[field] = value;
+                valEl.textContent = formatPhaseSeconds(value);
+                steppers.syncDisabled(value);
+                updateDesignerSummary();
+                markDesignerModified();
+              }
+            });
+            const steppers = bindStepperButtons(dec, inc, controller, { min: PHASE_MS_MIN, max: PHASE_MS_MAX, step: PHASE_MS_STEP });
+            steppers.syncDisabled(seg[field]);
+          };
+          bindPhaseControl('down', 'downMs');
+          bindPhaseControl('up', 'upMs');
+        } else {
+          const slider = row.querySelector('.dur-slider');
+          const durVal = row.querySelector('.dur-val');
+          const durDec = row.querySelector('.dur-dec');
+          const durInc = row.querySelector('.dur-inc');
+          const durController = bindTouchFriendlySlider(slider, {
+            min: durMin,
+            max: durMax,
+            step: 1,
+            onValueChange: (value) => {
+              seg.duration = value;
+              durVal.textContent = formatSegmentDuration(value);
+              durSteppers.syncDisabled(value);
+              updateDesignerSummary();
+              markDesignerModified();
+            }
+          });
+          const durSteppers = bindStepperButtons(durDec, durInc, durController, { min: durMin, max: durMax, step: 1 });
+          durSteppers.syncDisabled(seg.duration);
+
+          const paceSlider = row.querySelector('.pace-slider');
+          const paceVal = row.querySelector('.pace-val');
+          const paceDec = row.querySelector('.pace-dec');
+          const paceInc = row.querySelector('.pace-inc');
+          const paceController = bindTouchFriendlySlider(paceSlider, {
+            min: PACE_MIN,
+            max: PACE_MAX,
+            step: PACE_STEP,
+            onValueChange: (value) => {
+              seg.pace = value;
+              paceVal.textContent = formatPace(value);
+              paceSteppers.syncDisabled(value);
+              updateDesignerSummary();
+              markDesignerModified();
+            }
+          });
+          const paceSteppers = bindStepperButtons(paceDec, paceInc, paceController, { min: PACE_MIN, max: PACE_MAX, step: PACE_STEP });
+          paceSteppers.syncDisabled(seg.pace);
+        }
+
         const pacePreviewBtn = row.querySelector('.pace-preview-btn');
-        const paceController = bindTouchFriendlySlider(paceSlider, {
-          min: PACE_MIN,
-          max: PACE_MAX,
-          step: PACE_STEP,
-          onValueChange: (value) => {
-            seg.pace = value;
-            paceVal.textContent = formatPace(value);
-            paceSteppers.syncDisabled(value);
-            updateDesignerSummary();
-            markDesignerModified();
-          }
-        });
-        const paceSteppers = bindStepperButtons(paceDec, paceInc, paceController, { min: PACE_MIN, max: PACE_MAX, step: PACE_STEP });
-        paceSteppers.syncDisabled(seg.pace);
-
-        pacePreviewBtn.addEventListener('click', () => {
-          previewSegmentPace(seg, pacePreviewBtn);
-        });
+        if (pacePreviewBtn) {
+          pacePreviewBtn.addEventListener('click', () => {
+            previewSegmentPace(seg, pacePreviewBtn);
+          });
+        }
 
         const labelInput = row.querySelector('.label-input');
         labelInput.addEventListener('input', () => {
@@ -2422,6 +2820,17 @@
 
     document.getElementById('addWorkBtn').addEventListener('click', () => {
       designerDraft.segments.push(createSegment('work', 10));
+      markDesignerModified();
+      renderDesigner();
+    });
+
+    document.getElementById('addRepsBtn').addEventListener('click', () => {
+      designerDraft.segments.push(createRepsSegment({
+        reps: 10,
+        phaseOrder: 'down_then_up',
+        downMs: 450,
+        upMs: 550
+      }));
       markDesignerModified();
       renderDesigner();
     });
@@ -2509,17 +2918,21 @@
         name = `${name} (${suffix})`;
       }
 
+      const existing = designerEditId ? getPresetById(designerEditId) : null;
       const now = Date.now();
       const preset = {
         id: designerEditId || generateId(),
         name,
         isDefault: presetDefaultCheckbox.checked,
-        createdAt: designerEditId ? getPresetById(designerEditId).createdAt : now,
+        createdAt: existing ? existing.createdAt : now,
         updatedAt: now,
         segments: designerDraft.segments.map(s => normalizeSegment({ ...s })),
         cycles: designerDraft.cycles,
         audio: { ...designerDraft.audio }
       };
+      if (existing?.nameKey && name === t(existing.nameKey)) {
+        preset.nameKey = existing.nameKey;
+      }
 
       savePreset(preset);
       designerEditId = preset.id;
@@ -2527,7 +2940,7 @@
       savePresetBtn.textContent = t('updateTraining');
       clearDesignerModified();
       updateDesignerActionButtons();
-      showToast(t('savedPreset', { name: preset.name }), 'check');
+      showToast(t('savedPreset', { name: resolvePresetName(preset) }), 'check');
       playBeepTone(preset.audio.pitchNormal, 0.1, false);
       renderManagerList();
     }
@@ -2538,7 +2951,7 @@
       if (!designerEditId) return;
       const preset = getPresetById(designerEditId);
       if (!preset) return;
-      if (!confirm(t('deleteConfirm', { name: preset.name }))) return;
+      if (!confirm(t('deleteConfirm', { name: resolvePresetName(preset) }))) return;
       if (deletePreset(designerEditId)) {
         designerEditId = null;
         resetDesignerForm();
@@ -2585,7 +2998,7 @@
             <i data-lucide="grip-vertical" class="w-5 h-5"></i>
           </button>
           <div class="flex-1 min-w-0">
-            <div class="font-bold text-white truncate">${escapeHtml(preset.name)}</div>
+            <div class="font-bold text-white truncate">${escapeHtml(resolvePresetName(preset))}</div>
             <div class="text-xs text-neutral-500 mt-0.5">${escapeHtml(getPresetSubtitle(preset))}</div>
             <div class="flex gap-1.5 mt-2 flex-wrap">${badges.join('')}</div>
           </div>
@@ -2616,7 +3029,7 @@
           designerEditId = null;
           loadPresetOnMain(preset);
           switchTab('main', true);
-          showToast(t('loadedPreset', { name: preset.name }), 'play');
+          showToast(t('loadedPreset', { name: resolvePresetName(preset) }), 'play');
         });
 
         card.querySelector('.edit-preset-btn').addEventListener('click', (e) => {
@@ -2919,17 +3332,9 @@
     function activateFirstSegment({ playStartCue = false } = {}) {
       const first = getFirstActiveSegment();
       if (!first) return;
-
       timerState.cycleIndex = 1;
       timerState.segmentIndex = first.index;
-      timerState.currentSecond = first.segment.duration;
-      timerState.currentPhase = 'active';
-      if (playStartCue && first.segment.kind === 'work') {
-        playBeepTone(getPitchNormal(), 0.12, false);
-        triggerFlash('light');
-      }
-      restartTickInterval();
-      updateUI();
+      enterCurrentSegment({ playStartCue });
     }
 
     function schedulePrepTransition(delayMs = 1000) {
@@ -2956,6 +3361,8 @@
         clearInterval(timerState.intervalId);
         timerState.intervalId = null;
       }
+      const seg = getCurrentSegment();
+      if (isRepsSegment(seg)) return;
       if (timerState.isRunning && !transitionPending) {
         timerState.intervalId = setInterval(processSecondTick, getCurrentTickMs());
       }
@@ -2964,22 +3371,155 @@
     function getFirstActiveSegment() {
       if (!activePreset) return null;
       for (let i = 0; i < activePreset.segments.length; i++) {
-        if (activePreset.segments[i].duration > 0) return { index: i, segment: activePreset.segments[i] };
+        if (!isSegmentSkipped(activePreset.segments[i])) {
+          return { index: i, segment: activePreset.segments[i] };
+        }
       }
       return { index: 0, segment: activePreset.segments[0] };
     }
 
+    function resetRepsRuntime(seg) {
+      const repsSeg = isRepsSegment(seg) ? seg : null;
+      timerState.repIndex = 1;
+      timerState.repPhase = repsSeg ? getFirstPhase(repsSeg) : 'down';
+      timerState.phaseDurationMs = repsSeg ? getPhaseMs(repsSeg, timerState.repPhase) : 0;
+      timerState.phaseRemainingMs = timerState.phaseDurationMs;
+      timerState.phaseStartedAt = 0;
+    }
+
     function buildInitialRuntime(preset) {
-      const first = preset.segments.find(s => s.duration > 0) || preset.segments[0];
+      const first = preset.segments.find(s => !isSegmentSkipped(s)) || preset.segments[0];
       const segIndex = preset.segments.indexOf(first);
       return {
         cycleIndex: 1,
         segmentIndex: segIndex >= 0 ? segIndex : 0,
-        currentSecond: first ? first.duration : 10,
+        currentSecond: first
+          ? (isRepsSegment(first) ? getRepsCount(first) : first.duration)
+          : 10,
         currentPhase: 'idle',
         isRunning: false,
-        intervalId: null
+        intervalId: null,
+        repIndex: 1,
+        repPhase: first && isRepsSegment(first) ? getFirstPhase(first) : 'down',
+        phaseDurationMs: 0,
+        phaseRemainingMs: 0,
+        phaseStartedAt: 0
       };
+    }
+
+    function enterCurrentSegment({ playStartCue = false } = {}) {
+      const seg = getCurrentSegment();
+      if (!seg) return;
+
+      timerState.currentPhase = 'active';
+      if (timerState.intervalId != null) {
+        clearInterval(timerState.intervalId);
+        timerState.intervalId = null;
+      }
+      stopRepsPhaseEngine();
+
+      if (isRepsSegment(seg)) {
+        timerState.currentSecond = getRepsCount(seg);
+        resetRepsRuntime(seg);
+        if (timerState.isRunning) startRepsPhase({ reset: true, playAudio: true });
+        else updateUI();
+        return;
+      }
+
+      timerState.currentSecond = seg.duration;
+      if (playStartCue && seg.kind === 'work') {
+        playBeepTone(getPitchNormal(), 0.12, false);
+        triggerFlash('light');
+      }
+      restartTickInterval();
+      updateUI();
+    }
+
+    function snapshotRepsPhaseRemaining() {
+      const seg = getCurrentSegment();
+      if (!isRepsSegment(seg) || !timerState.phaseStartedAt) return;
+      const elapsed = performance.now() - timerState.phaseStartedAt;
+      timerState.phaseRemainingMs = Math.max(0, timerState.phaseRemainingMs - elapsed);
+      timerState.phaseStartedAt = 0;
+    }
+
+    function stopRepsPhaseEngine() {
+      if (repsPhaseTimeoutId != null) {
+        clearTimeout(repsPhaseTimeoutId);
+        repsPhaseTimeoutId = null;
+      }
+      if (repsRafId != null) {
+        cancelAnimationFrame(repsRafId);
+        repsRafId = null;
+      }
+      stopActiveSweeps();
+    }
+
+    function startRepsRaf() {
+      if (repsRafId != null) cancelAnimationFrame(repsRafId);
+      const tick = () => {
+        if (!timerState.isRunning || !isRepsSegment(getCurrentSegment())) {
+          repsRafId = null;
+          return;
+        }
+        updateProgressRing();
+        repsRafId = requestAnimationFrame(tick);
+      };
+      repsRafId = requestAnimationFrame(tick);
+    }
+
+    function isLastPhaseOfRep(seg, phase) {
+      return getFirstPhase(seg) === 'down' ? phase === 'up' : phase === 'down';
+    }
+
+    function startRepsPhase({ reset = false, playAudio = true } = {}) {
+      const seg = getCurrentSegment();
+      if (!isRepsSegment(seg) || !timerState.isRunning) return;
+
+      stopRepsPhaseEngine();
+      if (reset || timerState.phaseRemainingMs <= 0) {
+        timerState.phaseDurationMs = getPhaseMs(seg, timerState.repPhase);
+        timerState.phaseRemainingMs = timerState.phaseDurationMs;
+      }
+      timerState.phaseStartedAt = performance.now();
+
+      const lastRep = timerState.repIndex >= getRepsCount(seg);
+      const lastPhase = isLastPhaseOfRep(seg, timerState.repPhase);
+      if (playAudio) {
+        playRepsPhaseAudio(seg, timerState.repPhase, timerState.phaseRemainingMs, lastRep && lastPhase);
+      }
+      triggerFlash(isStrainPhase(seg, timerState.repPhase) ? 'heavy' : 'light');
+
+      repsPhaseTimeoutId = setTimeout(() => {
+        repsPhaseTimeoutId = null;
+        onRepsPhaseEnd();
+      }, timerState.phaseRemainingMs);
+
+      startRepsRaf();
+      updateUI();
+    }
+
+    function onRepsPhaseEnd() {
+      if (!timerState.isRunning || transitionPending) return;
+      const seg = getCurrentSegment();
+      if (!isRepsSegment(seg)) return;
+
+      if (isLastPhaseOfRep(seg, timerState.repPhase)) {
+        if (timerState.repIndex >= getRepsCount(seg)) {
+          timerState.currentSecond = 0;
+          updateUI();
+          advanceSegment();
+          return;
+        }
+        timerState.repIndex += 1;
+        timerState.currentSecond = getRepsCount(seg) - timerState.repIndex + 1;
+        timerState.repPhase = getFirstPhase(seg);
+        startRepsPhase({ reset: true, playAudio: true });
+        return;
+      }
+
+      timerState.repPhase = timerState.repPhase === 'down' ? 'up' : 'down';
+      startRepsPhase({ reset: true, playAudio: true });
     }
 
     function loadPresetOnMain(preset, showNotification) {
@@ -2988,7 +3528,7 @@
       timerState = buildInitialRuntime(activePreset);
       appStore.activePresetId = preset.id;
       saveStore(appStore);
-      activeTrainingName.textContent = preset.name;
+      activeTrainingName.textContent = resolvePresetName(preset);
       updateUI();
       if (showNotification !== false) {
         // caller may show toast
@@ -3010,21 +3550,13 @@
 
       let nextIndex = timerState.segmentIndex + 1;
 
-      while (nextIndex < preset.segments.length && preset.segments[nextIndex].duration === 0) {
+      while (nextIndex < preset.segments.length && isSegmentSkipped(preset.segments[nextIndex])) {
         nextIndex++;
       }
 
       if (nextIndex < preset.segments.length) {
         timerState.segmentIndex = nextIndex;
-        timerState.currentSecond = preset.segments[nextIndex].duration;
-        timerState.currentPhase = 'active';
-
-        if (preset.segments[nextIndex].kind === 'work') {
-          playBeepTone(getPitchNormal(), 0.12, false);
-          triggerFlash('light');
-        }
-        restartTickInterval();
-        updateUI();
+        enterCurrentSegment({ playStartCue: true });
         return;
       }
 
@@ -3033,19 +3565,12 @@
         timerState.segmentIndex = 0;
 
         while (timerState.segmentIndex < preset.segments.length &&
-               preset.segments[timerState.segmentIndex].duration === 0) {
+               isSegmentSkipped(preset.segments[timerState.segmentIndex])) {
           timerState.segmentIndex++;
         }
 
         if (timerState.segmentIndex < preset.segments.length) {
-          timerState.currentSecond = preset.segments[timerState.segmentIndex].duration;
-          timerState.currentPhase = 'active';
-          if (preset.segments[timerState.segmentIndex].kind === 'work') {
-            playBeepTone(getPitchNormal(), 0.12, false);
-            triggerFlash('light');
-          }
-          restartTickInterval();
-          updateUI();
+          enterCurrentSegment({ playStartCue: true });
           return;
         }
       }
@@ -3059,8 +3584,15 @@
       let percentage = 1;
       const seg = getCurrentSegment();
       const kind = getSegmentKind();
+      const repsActive = timerState.currentPhase === 'active' && isRepsSegment(seg);
 
-      if (timerState.currentPhase === 'active' && seg && seg.duration > 0) {
+      if (repsActive && timerState.phaseDurationMs > 0) {
+        let remaining = timerState.phaseRemainingMs;
+        if (timerState.isRunning && timerState.phaseStartedAt) {
+          remaining = Math.max(0, timerState.phaseRemainingMs - (performance.now() - timerState.phaseStartedAt));
+        }
+        percentage = remaining / timerState.phaseDurationMs;
+      } else if (timerState.currentPhase === 'active' && seg && seg.duration > 0) {
         percentage = timerState.currentSecond / seg.duration;
       } else if (timerState.currentPhase === 'prep') {
         // Keep the ring full on the Go beat so an empty dial does not look broken.
@@ -3072,12 +3604,18 @@
       }
 
       percentage = Math.max(0, Math.min(1, percentage));
+      if (repsActive && timerState.isRunning) {
+        progressRing.style.transition = 'none';
+      } else {
+        progressRing.style.transition = '';
+      }
       progressRing.style.strokeDashoffset = circumference - (percentage * circumference);
 
-      if (timerState.currentPhase === 'active' && kind === 'work') {
+      const strainNow = repsActive && isStrainPhase(seg, timerState.repPhase);
+      if (timerState.currentPhase === 'active' && kind === 'work' && (!repsActive || strainNow)) {
         progressRing.className.baseVal = "stroke-emerald-500 fill-transparent transition-all duration-200";
         phaseText.className = "text-xs uppercase font-extrabold tracking-widest text-emerald-400 mt-2 transition-colors duration-300";
-      } else if (timerState.currentPhase === 'active' && kind === 'rest') {
+      } else if (timerState.currentPhase === 'active' && (kind === 'rest' || (repsActive && !strainNow))) {
         progressRing.className.baseVal = "stroke-amber-500 fill-transparent transition-all duration-200";
         phaseText.className = "text-xs uppercase font-extrabold tracking-widest text-amber-400 mt-2 transition-colors duration-300";
       } else if (timerState.currentPhase === 'prep') {
@@ -3113,9 +3651,18 @@
       const kind = getSegmentKind();
 
       if (timerState.currentPhase === 'active' && kind === 'work') {
+        const seg = getCurrentSegment();
         stateBadge.textContent = label;
-        stateBadge.className = "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 transition-all duration-300";
-        phaseText.textContent = label;
+        if (isRepsSegment(seg)) {
+          const strainNow = isStrainPhase(seg, timerState.repPhase);
+          stateBadge.className = strainNow
+            ? "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 transition-all duration-300"
+            : "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-amber-500/10 border border-amber-500/30 text-amber-400 transition-all duration-300";
+          phaseText.textContent = timerState.repPhase === 'up' ? t('phaseUp') : t('phaseDown');
+        } else {
+          stateBadge.className = "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 transition-all duration-300";
+          phaseText.textContent = label;
+        }
       } else if (timerState.currentPhase === 'active' && kind === 'rest') {
         stateBadge.textContent = label;
         stateBadge.className = "px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest bg-amber-500/10 border border-amber-500/30 text-amber-400 transition-all duration-300";
@@ -3152,6 +3699,7 @@
       completionBeepIds.forEach(id => clearTimeout(id));
       completionBeepIds = [];
       transitionPending = false;
+      stopRepsPhaseEngine();
     }
 
     function scheduleSegmentTransition(delayMs = 1000) {
@@ -3205,6 +3753,7 @@
       }
 
       const kind = getSegmentKind();
+      if (isRepsSegment(getCurrentSegment())) return;
 
       if (kind === 'work') {
         if (timerState.currentSecond > 1) {
@@ -3283,11 +3832,19 @@
         return;
       }
 
+      if (timerState.currentPhase === 'active' && isRepsSegment(getCurrentSegment())) {
+        startRepsPhase({ reset: false, playAudio: true });
+        return;
+      }
+
       restartTickInterval();
       updateUI();
     }
 
     function pauseTimer() {
+      if (timerState.currentPhase === 'active' && isRepsSegment(getCurrentSegment())) {
+        snapshotRepsPhaseRemaining();
+      }
       timerState.isRunning = false;
       clearTimerHandles();
       togglePlayButtonIcon(false);
@@ -3323,8 +3880,9 @@
         transitionTimeoutId = null;
       }
       transitionPending = false;
+      stopRepsPhaseEngine();
       const kind = getSegmentKind();
-      if (kind === 'work') {
+      if (kind === 'work' && !isRepsSegment(getCurrentSegment())) {
         playBeepTone(getPitchHeavy(), 0.3, true);
       }
       advanceSegment();
@@ -3394,6 +3952,79 @@
       }
     }
 
+    function stopActiveSweeps() {
+      const stops = activeSweepStops.splice(0, activeSweepStops.length);
+      stops.forEach((stop) => {
+        try { stop(); } catch (e) { /* already stopped */ }
+      });
+    }
+
+    function playSweepTone({ fromHz, toHz, durationSec, type = 'sine', peak = 0.3 }) {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const duration = Math.max(0.08, Number(durationSec) || 0.4);
+        const from = Math.max(40, Number(fromHz) || 200);
+        const to = Math.max(40, Number(toHz) || 400);
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        osc.type = type;
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(from, now);
+        osc.frequency.exponentialRampToValueAtTime(to, now + duration * 0.92);
+
+        gainNode.gain.setValueAtTime(0.001, now);
+        gainNode.gain.exponentialRampToValueAtTime(peak, now + Math.min(0.05, duration * 0.12));
+        gainNode.gain.setValueAtTime(peak, now + Math.max(0.06, duration - 0.08));
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+
+        const stop = () => {
+          try {
+            const tNow = ctx.currentTime;
+            gainNode.gain.cancelScheduledValues(tNow);
+            const current = Math.max(0.001, gainNode.gain.value || 0.001);
+            gainNode.gain.setValueAtTime(current, tNow);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, tNow + 0.04);
+            osc.stop(tNow + 0.05);
+          } catch (e) { /* already stopped */ }
+        };
+        activeSweepStops.push(stop);
+      } catch (e) {
+        console.warn('Audio playback restrictions active.', e);
+      }
+    }
+
+    function playRepsPhaseAudio(seg, phase, durationMs, isFinal = false, audio = null) {
+      const durationSec = Math.max(0.08, (Number(durationMs) || PHASE_MS_DEFAULT) / 1000);
+      const pitchNormal = audio?.pitchNormal ?? getPitchNormal() ?? 800;
+      const pitchHeavy = audio?.pitchHeavy ?? getPitchHeavy() ?? 1200;
+      const low = Math.max(160, pitchNormal * 0.45);
+      const high = Math.max(low + 80, pitchHeavy);
+      if (isStrainPhase(seg, phase)) {
+        playSweepTone({
+          fromHz: low,
+          toHz: high,
+          durationSec,
+          type: isFinal ? 'triangle' : 'sine',
+          peak: isFinal ? 0.4 : 0.34
+        });
+        return;
+      }
+      playSweepTone({
+        fromHz: Math.max(low * 1.15, high * 0.55),
+        toHz: Math.max(90, low * 0.5),
+        durationSec,
+        type: 'sine',
+        peak: 0.22
+      });
+    }
+
     function playBeepTone(frequency, duration = 0.15, isHeavy = false, peakGain = null) {
       try {
         const ctx = getAudioContext();
@@ -3442,6 +4073,7 @@
     function stopPacePreview() {
       pacePreviewIds.forEach(id => clearTimeout(id));
       pacePreviewIds = [];
+      stopActiveSweeps();
 
       document.querySelectorAll('.pace-preview-btn.is-previewing').forEach(btn => {
         btn.classList.remove('is-previewing', 'text-sky-300', 'bg-sky-500/10');
@@ -3470,15 +4102,35 @@
       lucide.createIcons();
     }
 
-    function buildSegmentPreviewEvents(seg, audio, startAtMs) {
+    function buildSegmentPreviewEvents(seg, audio, startAtMs, { repLimit = null } = {}) {
       const events = [];
-      if (!seg || seg.duration <= 0) return { events, endAtMs: startAtMs };
+      if (!seg || isSegmentSkipped(seg)) return { events, endAtMs: startAtMs };
 
-      const tickMs = getSegmentTickMs(seg);
       const pitchNormal = audio?.pitchNormal ?? 800;
       const pitchHeavy = audio?.pitchHeavy ?? 1200;
       let at = startAtMs;
 
+      if (isRepsSegment(seg)) {
+        const total = getRepsCount(seg);
+        const n = repLimit != null ? Math.min(total, Math.max(1, repLimit)) : total;
+        const phases = getFirstPhase(seg) === 'up' ? ['up', 'down'] : ['down', 'up'];
+        for (let i = 0; i < n; i++) {
+          phases.forEach((phase) => {
+            const durationMs = getPhaseMs(seg, phase);
+            events.push({
+              atMs: at,
+              type: isStrainPhase(seg, phase) ? 'strain' : 'release',
+              durationMs,
+              pitchNormal,
+              pitchHeavy
+            });
+            at += durationMs;
+          });
+        }
+        return { events, endAtMs: at };
+      }
+
+      const tickMs = getSegmentTickMs(seg);
       if (seg.kind === 'work') {
         for (let remaining = seg.duration; remaining >= 1; remaining--) {
           if (remaining > 1) {
@@ -3531,12 +4183,22 @@
         const id = setTimeout(() => {
           if (ev.type === 'heavy') playBeepTone(ev.pitch, 0.45, true);
           else if (ev.type === 'rest') playBeepTone(ev.pitch, 0.08, false, 0.14);
+          else if (ev.type === 'strain' || ev.type === 'release') {
+            playRepsPhaseAudio(
+              null,
+              ev.type === 'strain' ? 'up' : 'down',
+              ev.durationMs,
+              false,
+              { pitchNormal: ev.pitchNormal, pitchHeavy: ev.pitchHeavy }
+            );
+          }
           else playBeepTone(ev.pitch, 0.12, false);
         }, ev.atMs);
         pacePreviewIds.push(id);
       });
 
-      const endAt = events[events.length - 1].atMs + 500;
+      const last = events[events.length - 1];
+      const endAt = last.atMs + (last.durationMs || 500);
       const doneId = setTimeout(() => stopPacePreview(), endAt);
       pacePreviewIds.push(doneId);
     }
@@ -3547,7 +4209,9 @@
         return;
       }
 
-      const { events } = buildSegmentPreviewEvents(seg, designerDraft?.audio, 0);
+      const { events } = buildSegmentPreviewEvents(seg, designerDraft?.audio, 0, {
+        repLimit: isRepsSegment(seg) ? 3 : null
+      });
       runDesignerPreview(events, previewBtn, { isPattern: false });
     }
 
@@ -4369,7 +5033,7 @@
       const activeId = appStore.activePresetId || appStore.defaultPresetId;
       const preset = getPresetById(activeId) || appStore.presets[0];
       loadPresetOnMain(preset, false);
-      activeTrainingName.textContent = preset.name;
+      activeTrainingName.textContent = resolvePresetName(preset);
 
       renderManagerList();
       applyDynamicI18n();
