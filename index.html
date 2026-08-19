@@ -1259,6 +1259,8 @@
     const PHASE_MS_STEP = 50;
     const PHASE_MS_DEFAULT = 500;
     const CATALOG_PUSHUPS_ID = 'catalog-pushups-15';
+    const CATALOG_PUSHUPS_DOWN_MS = 900;
+    const CATALOG_PUSHUPS_UP_MS = 1100;
 
     function createSegment(kind, duration, label, labelKey) {
       const seg = {
@@ -1433,8 +1435,8 @@
           createRepsSegment({
             reps: 15,
             phaseOrder: 'down_then_up',
-            downMs: 450,
-            upMs: 550,
+            downMs: CATALOG_PUSHUPS_DOWN_MS,
+            upMs: CATALOG_PUSHUPS_UP_MS,
             labelKey: 'pushupsLabel'
           })
         ],
@@ -1453,6 +1455,19 @@
       ), -1);
       preset.sortOrder = maxOrder + 1;
       appStore.presets.push(preset);
+      return true;
+    }
+
+    function migrateCatalogPushupsPreset() {
+      const preset = getPresetById(CATALOG_PUSHUPS_ID);
+      if (!preset || !Array.isArray(preset.segments) || !preset.segments.length) return false;
+      const seg = preset.segments[0];
+      if (!isRepsSegment(seg)) return false;
+      const isStockTempo = seg.downMs === 450 && seg.upMs === 550;
+      if (!isStockTempo) return false;
+      seg.downMs = CATALOG_PUSHUPS_DOWN_MS;
+      seg.upMs = CATALOG_PUSHUPS_UP_MS;
+      preset.updatedAt = Date.now();
       return true;
     }
 
@@ -1523,7 +1538,8 @@
         ensureDeletedTrainingsArray();
         const didSort = ensurePresetSortOrder(false);
         const didCatalog = ensureCatalogPresets();
-        if (didSort || didCatalog) saveStore(appStore);
+        const didPushupsTempo = migrateCatalogPushupsPreset();
+        if (didSort || didCatalog || didPushupsTempo) saveStore(appStore);
         return appStore;
       } catch (e) {
         console.warn('Corrupt storage, resetting.', e);
@@ -2195,8 +2211,8 @@
           mode: 'reps',
           reps: 15,
           phaseOrder: 'down_then_up',
-          downMs: 450,
-          upMs: 550,
+          downMs: 900,
+          upMs: 1100,
           labelKey: 'pushupsLabel'
         }]
       },
@@ -4019,7 +4035,7 @@
         return;
       }
       // Down / release: short rest-style knock at the start of the slot, then silence.
-      playBeepTone(520, 0.08, false, 0.14);
+      playBeepTone(520, 0.12, false, 0.35);
     }
 
     function playBeepTone(frequency, duration = 0.15, isHeavy = false, peakGain = null) {
