@@ -3963,9 +3963,9 @@
       try {
         const ctx = getAudioContext();
         if (!ctx) return;
-        const duration = Math.max(0.08, Number(durationSec) || 0.4);
+        const duration = Math.max(0.15, Number(durationSec) || 0.4);
         const from = Math.max(40, Number(fromHz) || 200);
-        const to = Math.max(40, Number(toHz) || 400);
+        const to = Math.max(from + 40, Number(toHz) || 400);
         const osc = ctx.createOscillator();
         const gainNode = ctx.createGain();
         osc.type = type;
@@ -3974,12 +3974,14 @@
 
         const now = ctx.currentTime;
         osc.frequency.setValueAtTime(from, now);
-        osc.frequency.exponentialRampToValueAtTime(to, now + duration * 0.92);
+        osc.frequency.linearRampToValueAtTime(to, now + duration);
 
+        const attack = Math.min(0.04, duration * 0.08);
+        const release = Math.min(0.08, duration * 0.12);
         gainNode.gain.setValueAtTime(0.001, now);
-        gainNode.gain.exponentialRampToValueAtTime(peak, now + Math.min(0.05, duration * 0.12));
-        gainNode.gain.setValueAtTime(peak, now + Math.max(0.06, duration - 0.08));
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        gainNode.gain.linearRampToValueAtTime(peak, now + attack);
+        gainNode.gain.setValueAtTime(peak, now + Math.max(attack, duration - release));
+        gainNode.gain.linearRampToValueAtTime(0.001, now + duration);
 
         osc.start(now);
         osc.stop(now + duration + 0.02);
@@ -3990,7 +3992,7 @@
             gainNode.gain.cancelScheduledValues(tNow);
             const current = Math.max(0.001, gainNode.gain.value || 0.001);
             gainNode.gain.setValueAtTime(current, tNow);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, tNow + 0.04);
+            gainNode.gain.linearRampToValueAtTime(0.001, tNow + 0.04);
             osc.stop(tNow + 0.05);
           } catch (e) { /* already stopped */ }
         };
@@ -4001,28 +4003,23 @@
     }
 
     function playRepsPhaseAudio(seg, phase, durationMs, isFinal = false, audio = null) {
-      const durationSec = Math.max(0.08, (Number(durationMs) || PHASE_MS_DEFAULT) / 1000);
       const pitchNormal = audio?.pitchNormal ?? getPitchNormal() ?? 800;
       const pitchHeavy = audio?.pitchHeavy ?? getPitchHeavy() ?? 1200;
-      const low = Math.max(160, pitchNormal * 0.45);
-      const high = Math.max(low + 80, pitchHeavy);
       if (isStrainPhase(seg, phase)) {
+        const durationSec = Math.max(0.15, (Number(durationMs) || PHASE_MS_DEFAULT) / 1000);
+        const low = Math.max(180, pitchNormal * 0.35);
+        const high = Math.max(low + 200, pitchHeavy);
         playSweepTone({
           fromHz: low,
           toHz: high,
           durationSec,
-          type: isFinal ? 'triangle' : 'sine',
-          peak: isFinal ? 0.4 : 0.34
+          type: 'sine',
+          peak: isFinal ? 0.4 : 0.36
         });
         return;
       }
-      playSweepTone({
-        fromHz: Math.max(low * 1.15, high * 0.55),
-        toHz: Math.max(90, low * 0.5),
-        durationSec,
-        type: 'sine',
-        peak: 0.22
-      });
+      // Down / release: short rest-style knock at the start of the slot, then silence.
+      playBeepTone(520, 0.08, false, 0.14);
     }
 
     function playBeepTone(frequency, duration = 0.15, isHeavy = false, peakGain = null) {

@@ -1,8 +1,8 @@
 // Deploy checklist:
 // 1. Bump APP_VERSION in version.js
 // 2. Bump @release below to the same value (changes SW bytes so browsers detect the update)
-// @release 1.4.1
-const SW_RELEASE = '1.4.1';
+// @release 1.4.2
+const SW_RELEASE = '1.4.2';
 
 importScripts('/version.js?v=' + encodeURIComponent(SW_RELEASE));
 if (typeof APP_VERSION === 'undefined' || APP_VERSION !== SW_RELEASE) {
