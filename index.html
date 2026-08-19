@@ -4019,11 +4019,10 @@
     }
 
     function playRepsPhaseAudio(seg, phase, durationMs, isFinal = false, audio = null) {
-      const pitchNormal = audio?.pitchNormal ?? getPitchNormal() ?? 800;
       const pitchHeavy = audio?.pitchHeavy ?? getPitchHeavy() ?? 1200;
       if (isStrainPhase(seg, phase)) {
         const durationSec = Math.max(0.15, (Number(durationMs) || PHASE_MS_DEFAULT) / 1000);
-        const low = Math.max(180, pitchNormal * 0.35);
+        const low = 120;
         const high = Math.max(low + 200, pitchHeavy);
         playSweepTone({
           fromHz: low,
