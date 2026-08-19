@@ -3361,8 +3361,8 @@
         clearInterval(timerState.intervalId);
         timerState.intervalId = null;
       }
-      const seg = getCurrentSegment();
-      if (isRepsSegment(seg)) return;
+      // Reps blocks use their own phase timeouts, but prep still needs the 1s tick.
+      if (timerState.currentPhase === 'active' && isRepsSegment(getCurrentSegment())) return;
       if (timerState.isRunning && !transitionPending) {
         timerState.intervalId = setInterval(processSecondTick, getCurrentTickMs());
       }
