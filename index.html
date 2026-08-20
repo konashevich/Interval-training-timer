@@ -777,9 +777,9 @@
         work: 'Work',
         rest: 'Rest',
         workModeTime: 'Time',
-        workModeReps: 'p',
-        reps: 'p',
-        repsCount: '{n} p',
+        workModeReps: 'Reps',
+        reps: 'Reps',
+        repsCount: '{n} reps',
         phaseOrder: 'Pattern',
         phaseDownThenUp: 'Down → Up',
         phaseUpThenDown: 'Up → Down',
@@ -964,9 +964,9 @@
         work: 'Робота',
         rest: 'Відпочинок',
         workModeTime: 'Час',
-        workModeReps: 'p',
-        reps: 'p',
-        repsCount: '{n} p',
+        workModeReps: 'Повтори',
+        reps: 'Повтори',
+        repsCount: '{n} повторів',
         phaseOrder: 'Патерн',
         phaseDownThenUp: 'Вниз → Вгору',
         phaseUpThenDown: 'Вгору → Вниз',
@@ -2531,7 +2531,7 @@
 
         const modeRow = seg.kind === 'work' ? `
           <div class="flex gap-1 mb-3">
-            <button type="button" class="kind-pill px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold normal-case ${repsModeActive}" data-action="mode" data-mode="reps">${t('workModeReps')}</button>
+            <button type="button" class="kind-pill px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${repsModeActive}" data-action="mode" data-mode="reps">${t('workModeReps')}</button>
             <button type="button" class="kind-pill px-3 py-1 rounded-lg border border-neutral-700 text-xs font-bold uppercase ${timeModeActive}" data-action="mode" data-mode="time">${t('workModeTime')}</button>
           </div>
         ` : '';
