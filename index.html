@@ -163,9 +163,10 @@
       color: rgb(52 211 153);
     }
     .pb-safe { padding-bottom: var(--tab-bar-inset); }
-    #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; transition: bottom 0.2s ease, margin-bottom 0.2s ease; }
+    #toast { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; transition: bottom 0.2s ease, margin-bottom 0.2s ease; z-index: 80; }
     #updateBanner { bottom: var(--tab-bar-inset); margin-bottom: 0.5rem; }
     html.update-banner-visible #toast { bottom: calc(var(--tab-bar-inset) + 3.75rem); }
+    html.pro-open #toast { bottom: 5.5rem; margin-bottom: env(safe-area-inset-bottom, 0px); }
     #appShell { padding-bottom: var(--tab-bar-inset); }
     .range-slider-wrap {
       padding: 1.5rem 0;
@@ -281,6 +282,27 @@
       overflow: hidden;
       touch-action: none;
     }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(115, 115, 115, 0.4) transparent;
+    }
+    *::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background: rgba(115, 115, 115, 0.4);
+      border-radius: 999px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background: rgba(163, 163, 163, 0.55);
+    }
+    .app-scroll {
+      overscroll-behavior: contain;
+    }
     .pro-tag-chip {
       border-color: rgb(38 38 38);
       color: rgb(163 163 163);
@@ -293,6 +315,62 @@
     .pro-card.is-selected {
       border-color: rgb(52 211 153 / 0.4);
       background: rgb(16 185 129 / 0.08);
+    }
+    .pro-select-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+    .pro-select-box {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.25rem;
+      height: 1.25rem;
+      margin: 0;
+      border: 2px solid rgb(115 115 115);
+      border-radius: 0.3rem;
+      background: rgb(10 10 10);
+      display: grid;
+      place-content: center;
+      cursor: pointer;
+    }
+    .pro-select-box:checked {
+      border-color: rgb(52 211 153);
+      background: rgb(16 185 129);
+    }
+    .pro-select-box:checked::after {
+      content: '';
+      width: 0.28rem;
+      height: 0.5rem;
+      border: solid rgb(3 7 18);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translateY(-1px);
+    }
+    #proOverlay {
+      background: rgb(10 10 10);
+    }
+    #proShell {
+      min-height: 0;
+    }
+    #proScroll {
+      min-height: 0;
+    }
+    #proList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+      gap: 0.75rem;
+      align-content: start;
+    }
+    #proList .pro-card {
+      height: 100%;
+    }
+    #proActionBarInner {
+      width: 100%;
+    }
+    @media (min-width: 768px) {
+      #proActionBarInner {
+        max-width: 28rem;
+        margin-left: auto;
+      }
     }
   </style>
 </head>
@@ -382,7 +460,7 @@
     </div>
 
     <!-- DESIGNER TAB -->
-    <div id="tabDesigner" class="tab-panel flex-1 flex-col px-6 pb-safe overflow-y-auto">
+    <div id="tabDesigner" class="tab-panel flex-1 flex-col px-6 pb-safe overflow-y-auto app-scroll">
       <div class="flex flex-wrap justify-between items-center gap-2 mb-4 pt-2">
         <div class="flex items-center gap-2 min-w-0">
           <i data-lucide="pen-tool" class="w-5 h-5 text-emerald-400 shrink-0"></i>
@@ -508,7 +586,7 @@
     </div>
 
     <!-- MANAGER TAB -->
-    <div id="tabManager" class="tab-panel flex-1 flex-col px-6 pb-safe overflow-y-auto">
+    <div id="tabManager" class="tab-panel flex-1 flex-col px-6 pb-safe overflow-y-auto app-scroll">
       <div class="flex items-center gap-2 mb-4 pt-2">
         <i data-lucide="list" class="w-5 h-5 text-emerald-400"></i>
         <h2 class="text-lg font-bold tracking-tight text-white" data-i18n="trainingManager">Training Manager</h2>
@@ -618,7 +696,7 @@
         </button>
       </div>
 
-      <div id="settingsListView" class="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+      <div id="settingsListView" class="flex-1 overflow-y-auto app-scroll px-6 py-4 space-y-2">
         <div class="w-full rounded-xl bg-neutral-900 border border-neutral-800 px-4 py-4">
           <div class="flex items-center gap-3 mb-3">
             <span class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
@@ -679,7 +757,7 @@
         </button>
       </div>
 
-      <div id="settingsDriveView" class="hidden flex-1 overflow-y-auto px-6 py-4 space-y-3">
+      <div id="settingsDriveView" class="hidden flex-1 overflow-y-auto app-scroll px-6 py-4 space-y-3">
         <p class="text-sm text-neutral-400" data-i18n="googleDriveHelp">Sign in to sync trainings across devices. Files stay in your Google Drive.</p>
         <div class="rounded-xl bg-neutral-900 border border-neutral-800 px-4 py-4 space-y-3">
           <div class="flex items-center gap-3">
@@ -709,7 +787,7 @@
         </div>
       </div>
 
-      <div id="settingsAboutView" class="hidden flex-1 overflow-y-auto px-6 py-6">
+      <div id="settingsAboutView" class="hidden flex-1 overflow-y-auto app-scroll px-6 py-6">
         <div class="flex flex-col items-center text-center mb-8">
           <img src="/icons/logo.svg" alt="" class="w-20 h-20 rounded-2xl mb-4" width="80" height="80">
           <h3 class="text-xl font-bold text-white mb-1" data-i18n="appTitle">VPRAVA.ONLINE</h3>
@@ -755,26 +833,25 @@
 
   <!-- PRO trainer workspace -->
   <div id="proOverlay" class="fixed inset-0 z-[55] hidden" aria-hidden="true">
-    <div class="absolute inset-0 max-w-md mx-auto flex flex-col bg-neutral-950">
-      <div class="flex items-center justify-between px-6 pt-6 pb-3 border-b border-neutral-800 shrink-0 gap-3">
-        <h2 class="text-lg font-bold text-white flex-1 min-w-0" data-i18n="proTitle">PRO — Trainer workspace</h2>
-        <button id="proCloseBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0" aria-label="Close" data-i18n-aria="close">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-      <div class="flex-1 overflow-y-auto px-6 py-4">
-        <p class="text-sm text-neutral-400 leading-relaxed mb-4" data-i18n="proExplainer">For trainers and physiotherapists. Tag your library, select a set of trainings, and send patients links. They open a link to add that training in their app.</p>
-        <div class="flex items-center gap-2 mb-3">
-          <button id="proSelectBtn" type="button" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold uppercase tracking-wider text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors active:scale-95" data-i18n="proSelect">Select</button>
+    <div id="proShell" class="absolute inset-0 flex flex-col bg-neutral-950">
+      <div class="shrink-0 border-b border-neutral-800 px-4 sm:px-8 pb-3" style="padding-top: max(1rem, env(safe-area-inset-top, 0px));">
+        <div class="flex items-center justify-between gap-3 mb-3">
+          <h2 class="text-lg sm:text-xl font-bold text-white flex-1 min-w-0" data-i18n="proTitle">PRO — Trainer workspace</h2>
+          <button id="proCloseBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0" aria-label="Close" data-i18n-aria="close">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
         </div>
-        <div id="proTagFilters" class="flex flex-wrap gap-2 mb-4"></div>
-        <div id="proEmpty" class="hidden text-center py-10">
+        <p class="text-sm text-neutral-400 leading-relaxed mb-3 max-w-3xl" data-i18n="proExplainer">For trainers and physiotherapists. Tag your library, select a set of trainings, and send patients links. They open a link to add that training in their app.</p>
+        <div id="proTagFilters" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div id="proScroll" class="flex-1 overflow-y-auto app-scroll px-4 sm:px-8 py-4">
+        <div id="proEmpty" class="hidden text-center py-16">
           <p class="text-neutral-400 text-sm" data-i18n="proEmptyFilter">No trainings with this tag</p>
         </div>
-        <div id="proList" class="space-y-3 pb-28"></div>
+        <div id="proList"></div>
       </div>
-      <div id="proActionBar" class="hidden shrink-0 border-t border-neutral-800 bg-neutral-950 px-6 pt-3" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));">
-        <div class="flex gap-2">
+      <div id="proActionBar" class="hidden shrink-0 border-t border-neutral-800 bg-neutral-950 px-4 sm:px-8 pt-3" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));">
+        <div id="proActionBarInner" class="flex gap-2">
           <button id="proCopyBtn" type="button" class="flex-1 py-3 rounded-xl bg-neutral-800 border border-neutral-700 hover:border-emerald-500/40 text-white font-semibold text-sm transition-colors active:scale-[0.99]" data-i18n="proCopy">Copy</button>
           <button id="proShareBtn" type="button" class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-sm transition-colors active:scale-[0.99]" data-i18n="proShare">Share</button>
         </div>
@@ -782,7 +859,7 @@
     </div>
   </div>
 
-  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bg-neutral-900 border border-neutral-800 text-neutral-200 px-4 py-2.5 rounded-full text-xs font-bold tracking-wide shadow-2xl flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 z-50 pointer-events-none">
+  <div id="toast" class="fixed left-1/2 -translate-x-1/2 bg-neutral-900 border border-neutral-800 text-neutral-200 px-4 py-2.5 rounded-2xl text-xs font-bold tracking-wide shadow-2xl flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 z-[80] pointer-events-none max-w-[min(28rem,calc(100%-2rem))] text-center leading-snug">
     <span id="toastIcon"></span>
     <span id="toastMessage">Done!</span>
   </div>
@@ -985,7 +1062,7 @@
         googleBackupDone: 'Backed up {n}',
         googleNotConfigured: 'Google Drive is not configured yet',
         shareTraining: 'Share training',
-        shareCopied: 'Share link copied',
+        shareCopied: 'Link copied. Now paste it to your client/patient.',
         shareFailed: 'Could not create share link',
         shareTooLarge: 'This training is too large to share as a link',
         shareNeedSignIn: 'Sign in with Google to share',
@@ -1005,7 +1082,7 @@
         proDoneSelect: 'Done',
         proShare: 'Share',
         proCopy: 'Copy',
-        proShareCopied: 'Links copied',
+        proShareCopied: 'Link copied. Now paste it to your client/patient.',
         proShareFailed: 'Could not share trainings',
         proNoneSelected: 'Select at least one training',
         proAllTags: 'All',
@@ -1202,7 +1279,7 @@
         googleBackupDone: 'Збережено {n}',
         googleNotConfigured: 'Google Drive ще не налаштовано',
         shareTraining: 'Поділитися тренуванням',
-        shareCopied: 'Посилання скопійовано',
+        shareCopied: 'Посилання скопійовано. Тепер вставте його клієнту/пацієнту.',
         shareFailed: 'Не вдалося створити посилання',
         shareTooLarge: 'Це тренування завелике для посилання',
         shareNeedSignIn: 'Увійдіть через Google, щоб поділитися',
@@ -1222,7 +1299,7 @@
         proDoneSelect: 'Готово',
         proShare: 'Поділитися',
         proCopy: 'Копіювати',
-        proShareCopied: 'Посилання скопійовано',
+        proShareCopied: 'Посилання скопійовано. Тепер вставте його клієнту/пацієнту.',
         proShareFailed: 'Не вдалося поділитися тренуваннями',
         proNoneSelected: 'Оберіть хоча б одне тренування',
         proAllTags: 'Усі',
@@ -1419,7 +1496,7 @@
         googleBackupDone: 'Сохранено {n}',
         googleNotConfigured: 'Google Drive ещё не настроен',
         shareTraining: 'Поделиться тренировкой',
-        shareCopied: 'Ссылка скопирована',
+        shareCopied: 'Ссылка скопирована. Теперь вставьте её клиенту/пациенту.',
         shareFailed: 'Не удалось создать ссылку',
         shareTooLarge: 'Эта тренировка слишком большая для ссылки',
         shareNeedSignIn: 'Войдите через Google, чтобы поделиться',
@@ -1440,7 +1517,7 @@
         proShare: 'Поделиться',
         proCopy: 'Копировать',
         proShareFailed: 'Не удалось поделиться тренировками',
-        proShareCopied: 'Ссылки скопированы',
+        proShareCopied: 'Ссылка скопирована. Теперь вставьте её клиенту/пациенту.',
         proNoneSelected: 'Выберите хотя бы одну тренировку',
         proAllTags: 'Все',
         proAddTag: 'Добавить метку',
@@ -4881,7 +4958,7 @@
       }
     }
 
-    function showToast(message, iconName = 'check') {
+    function showToast(message, iconName = 'check', durationMs = 2500) {
       toastMessage.textContent = message;
       toastIcon.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 text-emerald-400"></i>`;
       lucide.createIcons();
@@ -4890,7 +4967,7 @@
       setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
         toast.classList.add('translate-y-24', 'opacity-0');
-      }, 2500);
+      }, durationMs);
     }
 
     // =========================================================================
@@ -4947,7 +5024,6 @@
     const managerProBtn = document.getElementById('managerProBtn');
     const proOverlay = document.getElementById('proOverlay');
     const proCloseBtn = document.getElementById('proCloseBtn');
-    const proSelectBtn = document.getElementById('proSelectBtn');
     const proTagFilters = document.getElementById('proTagFilters');
     const proEmpty = document.getElementById('proEmpty');
     const proList = document.getElementById('proList');
@@ -4968,6 +5044,10 @@
     function isMobileDevice() {
       return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
         || (navigator.maxTouchPoints > 1 && window.matchMedia('(pointer: coarse)').matches);
+    }
+
+    function canUseNativeShare() {
+      return typeof navigator.share === 'function' && isMobileDevice();
     }
 
     function isIOS() {
@@ -5296,7 +5376,7 @@
           url,
           text: url
         });
-        if (result === 'copied') showToast(t('shareCopied'), 'link');
+        if (result === 'copied') showToast(t('shareCopied'), 'link', 3500);
         else if (result === 'failed') showToast(t('shareFailed'), 'alert-triangle');
       } catch (e) {
         console.error(e);
@@ -5418,9 +5498,9 @@
       switchTab('main', true);
     }
 
-    let proSelectMode = false;
     let proSelectedIds = new Set();
     let proActiveTag = null;
+    let proTagEditId = null;
 
     function isProOpen() {
       return !!(proOverlay && !proOverlay.classList.contains('hidden'));
@@ -5431,8 +5511,9 @@
       if (!proOverlay) return;
       proOverlay.classList.remove('hidden');
       proOverlay.setAttribute('aria-hidden', 'false');
-      proSelectMode = false;
+      document.documentElement.classList.add('pro-open');
       proSelectedIds = new Set();
+      proTagEditId = null;
       renderProList();
       lucide.createIcons();
     }
@@ -5441,8 +5522,9 @@
       if (!proOverlay) return;
       proOverlay.classList.add('hidden');
       proOverlay.setAttribute('aria-hidden', 'true');
-      proSelectMode = false;
+      document.documentElement.classList.remove('pro-open');
       proSelectedIds = new Set();
+      proTagEditId = null;
     }
 
     function getUsedTags() {
@@ -5460,6 +5542,34 @@
       const next = normalizePreset({ ...preset, tags: normalizeTags(tags) });
       savePreset(next);
       renderManagerList();
+    }
+
+    function commitProTag(presetId, raw) {
+      if (proTagEditId !== presetId) return;
+      proTagEditId = null;
+      const tag = String(raw || '').trim().slice(0, 32);
+      if (!tag) {
+        renderProList();
+        return;
+      }
+      const preset = getPresetById(presetId);
+      if (!preset) {
+        renderProList();
+        return;
+      }
+      setPresetTags(preset, [...(preset.tags || []), tag]);
+    }
+
+    function startProTagEdit(presetId) {
+      proTagEditId = presetId;
+      renderProList();
+      setTimeout(() => {
+        const input = proList && proList.querySelector('.pro-tag-input');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      }, 0);
     }
 
     function encodeSelectedShareUrls() {
@@ -5496,11 +5606,11 @@
       const text = Share.buildShareText(urls);
       if (copyOnly) {
         const copied = await copyTextToClipboard(text);
-        showToast(copied ? t('proShareCopied') : t('proShareFailed'), copied ? 'link' : 'alert-triangle');
+        showToast(copied ? t('proShareCopied') : t('proShareFailed'), copied ? 'link' : 'alert-triangle', copied ? 3500 : 2500);
         return;
       }
       const result = await shareOrCopyText({ title: t('proShareTitle'), text });
-      if (result === 'copied') showToast(t('proShareCopied'), 'link');
+      if (result === 'copied') showToast(t('proShareCopied'), 'link', 3500);
       else if (result === 'failed') showToast(t('proShareFailed'), 'alert-triangle');
       if (skippedLarge && result !== 'aborted') showToast(t('shareTooLarge'), 'alert-triangle');
     }
@@ -5514,11 +5624,22 @@
         return (preset.tags || []).some(tag => tag.toLowerCase() === proActiveTag.toLowerCase());
       });
 
-      if (proSelectBtn) {
-        proSelectBtn.textContent = proSelectMode ? t('proDoneSelect') : t('proSelect');
-      }
       if (proActionBar) {
-        proActionBar.classList.toggle('hidden', !(proSelectMode && proSelectedIds.size));
+        proActionBar.classList.toggle('hidden', !proSelectedIds.size);
+      }
+      if (proShareBtn) {
+        const nativeShare = canUseNativeShare();
+        proShareBtn.classList.toggle('hidden', !nativeShare);
+        if (proCopyBtn) {
+          proCopyBtn.classList.toggle('bg-emerald-500', !nativeShare);
+          proCopyBtn.classList.toggle('hover:bg-emerald-400', !nativeShare);
+          proCopyBtn.classList.toggle('text-neutral-950', !nativeShare);
+          proCopyBtn.classList.toggle('font-bold', !nativeShare);
+          proCopyBtn.classList.toggle('bg-neutral-800', nativeShare);
+          proCopyBtn.classList.toggle('hover:border-emerald-500/40', nativeShare);
+          proCopyBtn.classList.toggle('text-white', nativeShare);
+          proCopyBtn.classList.toggle('font-semibold', nativeShare);
+        }
       }
 
       const usedTags = getUsedTags();
@@ -5552,29 +5673,36 @@
       presets.forEach(preset => {
         const selected = proSelectedIds.has(preset.id);
         const card = document.createElement('div');
-        card.className = `pro-card rounded-xl bg-neutral-900 border border-neutral-800 p-3 sm:p-4 transition-colors ${selected ? 'is-selected' : ''}`;
+        card.className = `pro-card rounded-xl bg-neutral-900 border border-neutral-800 p-3 sm:p-4 transition-colors cursor-pointer active:scale-[0.99] ${selected ? 'is-selected' : ''}`;
         card.dataset.presetId = preset.id;
 
+        const editing = proTagEditId === preset.id;
         const tagsHtml = (preset.tags || []).map(tag => `
           <button type="button" class="pro-tag-remove px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-800 border border-neutral-700 text-neutral-300 hover:border-rose-500/40 hover:text-rose-300" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)} ×</button>
         `).join('');
+        const addTagHtml = editing
+          ? `<input type="text" class="pro-tag-input w-28 max-w-full px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-950 border border-emerald-500/40 text-white placeholder-neutral-600 focus:outline-none" maxlength="32" placeholder="${escapeHtml(t('proTagPrompt'))}" autocomplete="off" enterkeyhint="done">`
+          : `<button type="button" class="pro-add-tag-btn px-2 py-0.5 rounded-full text-[10px] font-semibold border border-dashed border-neutral-700 text-neutral-400 hover:text-emerald-300 hover:border-emerald-500/40">${t('proAddTag')}</button>`;
 
         card.innerHTML = `
           <div class="flex items-start gap-2">
-            ${proSelectMode ? `<input type="checkbox" class="pro-select-box mt-1 w-4 h-4 accent-emerald-500 shrink-0" ${selected ? 'checked' : ''}>` : ''}
+            <label class="pro-select-btn shrink-0 mt-0.5 rounded-xl bg-neutral-800 border border-neutral-700 hover:border-emerald-500/40 flex items-center justify-center cursor-pointer">
+              <input type="checkbox" class="pro-select-box" ${selected ? 'checked' : ''} aria-label="${t('proSelect')}">
+            </label>
             <div class="flex-1 min-w-0">
               <div class="font-bold text-white truncate">${escapeHtml(resolvePresetName(preset))}</div>
               <div class="text-xs text-neutral-500 mt-0.5">${escapeHtml(getPresetSubtitle(preset))}</div>
               <div class="flex flex-wrap gap-1.5 mt-2">
                 ${tagsHtml}
-                <button type="button" class="pro-add-tag-btn px-2 py-0.5 rounded-full text-[10px] font-semibold border border-dashed border-neutral-700 text-neutral-400 hover:text-emerald-300 hover:border-emerald-500/40">${t('proAddTag')}</button>
+                ${addTagHtml}
               </div>
             </div>
-            ${proSelectMode ? '' : `
-              <button type="button" class="pro-share-one shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white" aria-label="${t('shareTraining')}">
-                <i data-lucide="share-2" class="w-4 h-4"></i>
-              </button>
-            `}
+            <button type="button" class="pro-share-one shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-700" aria-label="${t('shareTraining')}">
+              <i data-lucide="share-2" class="w-5 h-5"></i>
+            </button>
+            <button type="button" class="pro-edit-btn shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-700" aria-label="${t('editTraining')}">
+              <i data-lucide="settings" class="w-5 h-5"></i>
+            </button>
           </div>
         `;
 
@@ -5584,18 +5712,10 @@
           renderProList();
         };
 
-        if (proSelectMode) {
-          card.addEventListener('click', (e) => {
-            if (e.target.closest('.pro-add-tag-btn') || e.target.closest('.pro-tag-remove')) return;
-            toggleSelect();
-          });
-        }
-
-        const checkbox = card.querySelector('.pro-select-box');
-        if (checkbox) {
-          checkbox.addEventListener('click', (e) => e.stopPropagation());
-          checkbox.addEventListener('change', toggleSelect);
-        }
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.pro-share-one, .pro-edit-btn, .pro-add-tag-btn, .pro-tag-remove, .pro-tag-input')) return;
+          toggleSelect();
+        });
 
         card.querySelectorAll('.pro-tag-remove').forEach(btn => {
           btn.addEventListener('click', (e) => {
@@ -5609,11 +5729,27 @@
         if (addBtn) {
           addBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const raw = window.prompt(t('proTagPrompt'), '');
-            if (raw == null) return;
-            const tag = String(raw).trim().slice(0, 32);
-            if (!tag) return;
-            setPresetTags(preset, [...(preset.tags || []), tag]);
+            startProTagEdit(preset.id);
+          });
+        }
+
+        const tagInput = card.querySelector('.pro-tag-input');
+        if (tagInput) {
+          tagInput.addEventListener('click', (e) => e.stopPropagation());
+          tagInput.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              commitProTag(preset.id, tagInput.value);
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              proTagEditId = null;
+              renderProList();
+            }
+          });
+          tagInput.addEventListener('focus', () => {
+            const onBlur = () => commitProTag(preset.id, tagInput.value);
+            tagInput.addEventListener('blur', onBlur, { once: true });
           });
         }
 
@@ -5622,6 +5758,17 @@
           shareOne.addEventListener('click', (e) => {
             e.stopPropagation();
             void sharePreset(preset);
+          });
+        }
+
+        const editBtn = card.querySelector('.pro-edit-btn');
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            designerEditId = preset.id;
+            loadDesignerFromPreset(preset);
+            closeProWorkspace();
+            switchTab('designer', true);
           });
         }
 
@@ -5810,13 +5957,6 @@
       });
     }
     if (proCloseBtn) proCloseBtn.addEventListener('click', closeProWorkspace);
-    if (proSelectBtn) {
-      proSelectBtn.addEventListener('click', () => {
-        proSelectMode = !proSelectMode;
-        if (!proSelectMode) proSelectedIds = new Set();
-        renderProList();
-      });
-    }
     if (proCopyBtn) proCopyBtn.addEventListener('click', () => { void shareProSelection(true); });
     if (proShareBtn) proShareBtn.addEventListener('click', () => { void shareProSelection(false); });
     if (settingsDriveBtn) {
