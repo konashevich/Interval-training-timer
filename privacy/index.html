@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Privacy Policy — VPRAVA.ONLINE</title>
+  <script src="/js/locale.js"></script>
+  <script>
+    (function () {
+      var locale = (window.AppLocale && AppLocale.resolveLocale()) || 'en';
+      var titles = {
+        en: 'Privacy Policy — VPRAVA.ONLINE',
+        uk: 'Політика конфіденційності — VPRAVA.ONLINE',
+        ru: 'Политика конфиденциальности — VPRAVA.ONLINE'
+      };
+      document.documentElement.lang = locale;
+      document.documentElement.setAttribute('data-locale', locale);
+      document.title = titles[locale] || titles.en;
+    })();
+  </script>
   <meta name="theme-color" content="#10b981">
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
   <style>
@@ -11,38 +25,110 @@
     a { color: #34d399; }
     h1 { font-size: 1.5rem; }
     h2 { font-size: 1.1rem; margin-top: 1.75rem; }
+    [data-i18n-page] { display: none; }
+    html:not([data-locale]) [data-i18n-page="en"],
+    html[data-locale="en"] [data-i18n-page="en"],
+    html[data-locale="uk"] [data-i18n-page="uk"],
+    html[data-locale="ru"] [data-i18n-page="ru"] { display: block; }
   </style>
 </head>
 <body>
   <p><a href="/">← VPRAVA.ONLINE</a></p>
-  <h1>Privacy Policy</h1>
-  <p>Last updated: 18 July 2026</p>
-  <p>
-    VPRAVA.ONLINE (“the app”) runs in your browser as a static Progressive Web App at
-    <a href="https://vprava.online/">vprava.online</a>
-    (also available at <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
-  </p>
-  <h2>Local data</h2>
-  <p>
-    Trainings, language preference, and similar settings are stored on your device (browser local storage).
-    We do not operate an application database that stores your workouts.
-  </p>
-  <h2>Google Drive (optional)</h2>
-  <p>
-    If you sign in with Google, the app requests access only to files and folders it creates
-    (<code>drive.file</code> scope), plus basic profile information (email) to show which account is linked.
-    Trainings are synced to a folder named <code>timer.konashevych.com</code> in your Google Drive
-    (legacy folder name kept so existing vaults continue to work).
-    Shared links upload a snapshot file that you choose to make readable by anyone with the link.
-  </p>
-  <h2>OAuth session</h2>
-  <p>
-    To keep you signed in without prompting every hour, a Cloudflare Worker at
-    <code>timer-api.konashevych.com</code> stores a refresh token in encrypted/server-side KV,
-    associated with an HttpOnly cookie. Access tokens are returned to your browser only.
-    Signing out revokes that session.
-  </p>
-  <h2>Contact</h2>
-  <p>Questions: <a href="https://t.me/oleksiiko">@oleksiiko</a> on Telegram, or the project GitHub repository.</p>
+
+  <article data-i18n-page="en">
+    <h1>Privacy Policy</h1>
+    <p>Last updated: 18 July 2026</p>
+    <p>
+      VPRAVA.ONLINE (“the app”) runs in your browser as a static Progressive Web App at
+      <a href="https://vprava.online/">vprava.online</a>
+      (also available at <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
+    </p>
+    <h2>Local data</h2>
+    <p>
+      Trainings, language preference, and similar settings are stored on your device (browser local storage).
+      We do not operate an application database that stores your workouts.
+    </p>
+    <h2>Google Drive (optional)</h2>
+    <p>
+      If you sign in with Google, the app requests access only to files and folders it creates
+      (<code>drive.file</code> scope), plus basic profile information (email) to show which account is linked.
+      Trainings are synced to a folder named <code>timer.konashevych.com</code> in your Google Drive
+      (legacy folder name kept so existing vaults continue to work).
+      Shared links upload a snapshot file that you choose to make readable by anyone with the link.
+    </p>
+    <h2>OAuth session</h2>
+    <p>
+      To keep you signed in without prompting every hour, a Cloudflare Worker at
+      <code>timer-api.konashevych.com</code> stores a refresh token in encrypted/server-side KV,
+      associated with an HttpOnly cookie. Access tokens are returned to your browser only.
+      Signing out revokes that session.
+    </p>
+    <h2>Contact</h2>
+    <p>Questions: <a href="https://t.me/oleksiiko">@oleksiiko</a> on Telegram, or the project GitHub repository.</p>
+  </article>
+
+  <article data-i18n-page="uk">
+    <h1>Політика конфіденційності</h1>
+    <p>Останнє оновлення: 18 липня 2026</p>
+    <p>
+      VPRAVA.ONLINE («застосунок») працює у вашому браузері як статичний Progressive Web App за адресою
+      <a href="https://vprava.online/">vprava.online</a>
+      (також доступний на <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
+    </p>
+    <h2>Локальні дані</h2>
+    <p>
+      Тренування, мовні налаштування та подібні параметри зберігаються на вашому пристрої (локальне сховище браузера).
+      Ми не ведемо серверної бази даних, у якій зберігалися б ваші тренування.
+    </p>
+    <h2>Google Drive (необов’язково)</h2>
+    <p>
+      Якщо ви входите через Google, застосунок запитує доступ лише до файлів і папок, які сам створює
+      (область <code>drive.file</code>), плюс базову інформацію профілю (email), щоб показати, який обліковий запис підключено.
+      Тренування синхронізуються в папку <code>timer.konashevych.com</code> у вашому Google Drive
+      (застарілу назву папки збережено, щоб наявні сховища продовжували працювати).
+      Спільні посилання завантажують знімок файлу, який ви самі робите доступним для всіх, хто має посилання.
+    </p>
+    <h2>Сеанс OAuth</h2>
+    <p>
+      Щоб залишатися в системі без запиту щогодини, Cloudflare Worker на
+      <code>timer-api.konashevych.com</code> зберігає refresh-токен у зашифрованому/серверному KV,
+      пов’язаному з HttpOnly cookie. Access-токени повертаються лише у ваш браузер.
+      Вихід відкликає цей сеанс.
+    </p>
+    <h2>Контакт</h2>
+    <p>Питання: <a href="https://t.me/oleksiiko">@oleksiiko</a> в Telegram або репозиторій проєкту на GitHub.</p>
+  </article>
+
+  <article data-i18n-page="ru">
+    <h1>Политика конфиденциальности</h1>
+    <p>Последнее обновление: 18 июля 2026</p>
+    <p>
+      VPRAVA.ONLINE («приложение») работает в вашем браузере как статический Progressive Web App по адресу
+      <a href="https://vprava.online/">vprava.online</a>
+      (также доступен на <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
+    </p>
+    <h2>Локальные данные</h2>
+    <p>
+      Тренировки, языковые настройки и подобные параметры хранятся на вашем устройстве (локальное хранилище браузера).
+      Мы не ведём серверной базы данных, в которой хранились бы ваши тренировки.
+    </p>
+    <h2>Google Drive (необязательно)</h2>
+    <p>
+      Если вы входите через Google, приложение запрашивает доступ только к файлам и папкам, которые само создаёт
+      (область <code>drive.file</code>), плюс базовую информацию профиля (email), чтобы показать, какой аккаунт подключён.
+      Тренировки синхронизируются в папку <code>timer.konashevych.com</code> в вашем Google Drive
+      (устаревшее имя папки сохранено, чтобы существующие хранилища продолжали работать).
+      Общие ссылки загружают снимок файла, который вы сами делаете доступным для всех, у кого есть ссылка.
+    </p>
+    <h2>Сеанс OAuth</h2>
+    <p>
+      Чтобы оставаться в системе без запроса каждый час, Cloudflare Worker на
+      <code>timer-api.konashevych.com</code> хранит refresh-токен в зашифрованном/серверном KV,
+      связанном с HttpOnly cookie. Access-токены возвращаются только в ваш браузер.
+      Выход отзывает этот сеанс.
+    </p>
+    <h2>Контакт</h2>
+    <p>Вопросы: <a href="https://t.me/oleksiiko">@oleksiiko</a> в Telegram или репозиторий проекта на GitHub.</p>
+  </article>
 </body>
 </html>

@@ -3,6 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="/js/locale.js"></script>
+  <script>
+    (function () {
+      var locale = (window.AppLocale && AppLocale.resolveLocale()) || 'en';
+      document.documentElement.lang = locale;
+      if (locale !== 'en') {
+        document.documentElement.classList.add('i18n-pending');
+        setTimeout(function () {
+          document.documentElement.classList.remove('i18n-pending');
+        }, 2000);
+      }
+    })();
+  </script>
   <title>VPRAVA.ONLINE — Interval training timer</title>
   <meta name="description" content="VPRAVA.ONLINE is a browser interval training timer. Design custom work/rest patterns and run workouts with visual and audio cues. Optional Google Drive sync keeps trainings in your own Drive folder.">
   <meta name="application-name" content="VPRAVA.ONLINE">
@@ -22,6 +35,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    html.i18n-pending body {
+      visibility: hidden;
+    }
     html, body {
       height: 100%;
       height: 100dvh;
@@ -265,6 +281,19 @@
       overflow: hidden;
       touch-action: none;
     }
+    .pro-tag-chip {
+      border-color: rgb(38 38 38);
+      color: rgb(163 163 163);
+    }
+    .pro-tag-chip.is-active {
+      border-color: rgb(52 211 153 / 0.4);
+      background: rgb(16 185 129 / 0.15);
+      color: rgb(167 243 208);
+    }
+    .pro-card.is-selected {
+      border-color: rgb(52 211 153 / 0.4);
+      background: rgb(16 185 129 / 0.08);
+    }
   </style>
 </head>
 <body class="bg-neutral-950 text-neutral-100 flex flex-col overflow-x-hidden selection:bg-emerald-500/30 selection:text-emerald-300">
@@ -287,7 +316,7 @@
         </p>
       </div>
     </div>
-    <button id="settingsBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 flex items-center justify-center transition-all active:scale-95 shrink-0" aria-label="Settings">
+    <button id="settingsBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 flex items-center justify-center transition-all active:scale-95 shrink-0" aria-label="Settings" data-i18n-aria="settings">
       <i data-lucide="more-vertical" class="w-5 h-5"></i>
     </button>
   </header>
@@ -333,7 +362,7 @@
                 <i data-lucide="rotate-ccw" class="w-5 h-5 shrink-0"></i>
                 <span class="text-[8px] sm:text-[9px] mt-0.5 font-bold uppercase tracking-wide leading-none text-center whitespace-nowrap" data-i18n="reset">Reset</span>
               </button>
-              <button id="playBtn" class="flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 shrink-0 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all duration-300">
+              <button id="playBtn" class="flex items-center justify-center w-[4.5rem] h-[4.5rem] sm:w-20 sm:h-20 shrink-0 rounded-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all duration-300" aria-label="Play">
                 <svg id="playIconSvg" class="w-7 h-7 sm:w-8 sm:h-8 fill-current ml-1" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
@@ -483,6 +512,7 @@
       <div class="flex items-center gap-2 mb-4 pt-2">
         <i data-lucide="list" class="w-5 h-5 text-emerald-400"></i>
         <h2 class="text-lg font-bold tracking-tight text-white" data-i18n="trainingManager">Training Manager</h2>
+        <button id="managerProBtn" type="button" class="ml-auto px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-colors active:scale-95" data-i18n="pro">PRO</button>
       </div>
 
       <div id="managerEmpty" class="hidden flex-1 flex flex-col items-center justify-center text-center py-12">
@@ -539,7 +569,7 @@
           <i data-lucide="link" class="w-4 h-4"></i>
         </span>
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-bold uppercase tracking-wider text-emerald-400" data-i18n="sharedBannerTitle">Shared training</div>
+          <div id="sharedBannerKicker" class="text-xs font-bold uppercase tracking-wider text-emerald-400">Shared training</div>
           <div id="sharedTrainingName" class="text-sm font-semibold text-white truncate mt-0.5"></div>
           <div id="sharedTrainingMeta" class="text-xs text-neutral-500 mt-0.5"></div>
         </div>
@@ -561,7 +591,7 @@
           <h2 class="text-lg font-bold text-white" data-i18n="installTitle">Install VPRAVA.ONLINE</h2>
         </div>
         <p class="text-sm text-neutral-400 mb-5 leading-relaxed" data-i18n="installBody">Add to your home screen for fullscreen access and quick launch — works offline after your first visit.</p>
-        <div id="iosInstallHint" class="hidden text-sm text-neutral-400 mb-5 leading-relaxed bg-neutral-950/60 border border-neutral-800 rounded-xl p-4" data-i18n="iosInstallHint"></div>
+        <div id="iosInstallHint" class="hidden text-sm text-neutral-400 mb-5 leading-relaxed bg-neutral-950/60 border border-neutral-800 rounded-xl p-4"></div>
         <label class="flex items-center gap-3 mb-5 cursor-pointer">
           <input type="checkbox" id="installDontAskAgain" class="w-4 h-4 accent-emerald-500 rounded">
           <span class="text-sm text-neutral-300" data-i18n="dontAskAgain">Don't ask me again</span>
@@ -579,11 +609,11 @@
     <div id="settingsBackdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
     <div class="absolute inset-0 max-w-md mx-auto flex flex-col bg-neutral-950">
       <div class="flex items-center justify-between px-6 pt-6 pb-4 border-b border-neutral-800 shrink-0">
-        <button id="settingsBackBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95 hidden" aria-label="Back">
+        <button id="settingsBackBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95 hidden" aria-label="Back" data-i18n-aria="back">
           <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </button>
         <h2 id="settingsTitle" class="text-lg font-bold text-white flex-1" data-i18n="settings">Settings</h2>
-        <button id="settingsCloseBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" aria-label="Close">
+        <button id="settingsCloseBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95" aria-label="Close" data-i18n-aria="close">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -596,18 +626,26 @@
             </span>
             <span class="text-sm font-semibold text-white" data-i18n="language">Language</span>
           </div>
-          <div class="flex gap-2" id="languageGroup" role="group" aria-label="Language">
-            <button type="button" id="langSystemBtn" data-locale="system" class="lang-option flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-colors active:scale-[0.98]" data-i18n="languageSystem">
-              System
-            </button>
-            <button type="button" id="langEnBtn" data-locale="en" class="lang-option flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-colors active:scale-[0.98]">
-              English
-            </button>
-            <button type="button" id="langUkBtn" data-locale="uk" class="lang-option flex-1 py-2.5 rounded-lg border text-sm font-semibold transition-colors active:scale-[0.98]">
-              Українська
-            </button>
+          <div class="relative" id="languageGroup">
+            <select id="languageSelect" aria-label="Language" class="w-full appearance-none px-4 py-3 pr-10 rounded-xl bg-neutral-950 border border-neutral-700 text-white text-sm font-semibold focus:outline-none focus:border-emerald-500/50 transition-colors cursor-pointer">
+              <option value="system">System</option>
+              <option value="en">English</option>
+              <option value="uk">Українська</option>
+              <option value="ru">Русский</option>
+            </select>
+            <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none"></i>
           </div>
         </div>
+        <button id="settingsProBtn" type="button" class="w-full flex items-center gap-3 px-4 py-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-emerald-500/30 text-left transition-colors active:scale-[0.99]">
+          <span class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <i data-lucide="briefcase" class="w-5 h-5"></i>
+          </span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-sm font-semibold text-white" data-i18n="pro">PRO</span>
+            <span class="block text-xs text-neutral-500 truncate mt-0.5" data-i18n="proSubtitle">Trainer workspace</span>
+          </span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-neutral-600 shrink-0"></i>
+        </button>
         <button id="settingsInstallBtn" type="button" class="hidden w-full flex items-center gap-3 px-4 py-4 rounded-xl bg-neutral-900 border border-neutral-800 hover:border-emerald-500/30 text-left transition-colors active:scale-[0.99]">
           <span class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
             <i data-lucide="download" class="w-5 h-5"></i>
@@ -642,7 +680,7 @@
       </div>
 
       <div id="settingsDriveView" class="hidden flex-1 overflow-y-auto px-6 py-4 space-y-3">
-        <p class="text-sm text-neutral-400" data-i18n="googleDriveHelp">Sign in to sync trainings across devices and create share links. Files stay in your Google Drive.</p>
+        <p class="text-sm text-neutral-400" data-i18n="googleDriveHelp">Sign in to sync trainings across devices. Files stay in your Google Drive.</p>
         <div class="rounded-xl bg-neutral-900 border border-neutral-800 px-4 py-4 space-y-3">
           <div class="flex items-center gap-3">
             <span class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
@@ -650,7 +688,7 @@
             </span>
             <div class="min-w-0 flex-1">
               <div class="text-[10px] font-extrabold uppercase tracking-widest text-neutral-500" data-i18n="googleAccount">Account</div>
-              <div id="driveAccountEmail" class="text-sm font-semibold text-white truncate" data-i18n="googleNotSignedIn">Not signed in</div>
+              <div id="driveAccountEmail" class="text-sm font-semibold text-white truncate">Not signed in</div>
             </div>
           </div>
           <div class="text-xs text-neutral-500">
@@ -715,9 +753,38 @@
     </div>
   </div>
 
+  <!-- PRO trainer workspace -->
+  <div id="proOverlay" class="fixed inset-0 z-[55] hidden" aria-hidden="true">
+    <div class="absolute inset-0 max-w-md mx-auto flex flex-col bg-neutral-950">
+      <div class="flex items-center justify-between px-6 pt-6 pb-3 border-b border-neutral-800 shrink-0 gap-3">
+        <h2 class="text-lg font-bold text-white flex-1 min-w-0" data-i18n="proTitle">PRO — Trainer workspace</h2>
+        <button id="proCloseBtn" type="button" class="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition-all active:scale-95 shrink-0" aria-label="Close" data-i18n-aria="close">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto px-6 py-4">
+        <p class="text-sm text-neutral-400 leading-relaxed mb-4" data-i18n="proExplainer">For trainers and physiotherapists. Tag your library, select a set of trainings, and send patients links. They open a link to add that training in their app.</p>
+        <div class="flex items-center gap-2 mb-3">
+          <button id="proSelectBtn" type="button" class="px-3 py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold uppercase tracking-wider text-neutral-300 hover:text-white hover:border-neutral-700 transition-colors active:scale-95" data-i18n="proSelect">Select</button>
+        </div>
+        <div id="proTagFilters" class="flex flex-wrap gap-2 mb-4"></div>
+        <div id="proEmpty" class="hidden text-center py-10">
+          <p class="text-neutral-400 text-sm" data-i18n="proEmptyFilter">No trainings with this tag</p>
+        </div>
+        <div id="proList" class="space-y-3 pb-28"></div>
+      </div>
+      <div id="proActionBar" class="hidden shrink-0 border-t border-neutral-800 bg-neutral-950 px-6 pt-3" style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));">
+        <div class="flex gap-2">
+          <button id="proCopyBtn" type="button" class="flex-1 py-3 rounded-xl bg-neutral-800 border border-neutral-700 hover:border-emerald-500/40 text-white font-semibold text-sm transition-colors active:scale-[0.99]" data-i18n="proCopy">Copy</button>
+          <button id="proShareBtn" type="button" class="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold text-sm transition-colors active:scale-[0.99]" data-i18n="proShare">Share</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="fixed left-1/2 -translate-x-1/2 bg-neutral-900 border border-neutral-800 text-neutral-200 px-4 py-2.5 rounded-full text-xs font-bold tracking-wide shadow-2xl flex items-center gap-2 transform translate-y-24 opacity-0 transition-all duration-300 z-50 pointer-events-none">
     <span id="toastIcon"></span>
-    <span id="toastMessage" data-i18n="done">Done!</span>
+    <span id="toastMessage">Done!</span>
   </div>
 
   <script src="/version.js"></script>
@@ -729,7 +796,7 @@
   </script>
   <script>
     // =========================================================================
-    // --- i18n (auto: Ukrainian if ru/uk in browser languages) ---
+    // --- i18n (en / uk / ru; System follows browser language preference) ---
     // =========================================================================
 
     const STRINGS = {
@@ -751,7 +818,7 @@
         addRest: 'Rest',
         cycles: 'Cycles',
         cyclesCount: '{n} cycles',
-        cycleSummary: '{cycles} cycles × {segments} segments = {intervals} intervals',
+        cycleSummary: '{cycles} × {segments} = {intervals}',
         audioSynthesizer: 'Audio Synthesizer',
         regularBeepPitch: 'Regular Beep Pitch',
         finalEmphasisedPitch: 'Final Emphasised Pitch',
@@ -810,12 +877,17 @@
         readyToStart: 'Ready To Start',
         getReady: 'Get Ready',
         go: 'Go',
-        presetSubtitle: '{cycles} cycles · {total} total',
-        presetSubtitleReps: '{reps} reps · {total} total',
+        presetSubtitle: '{cycles} · {total} total',
+        presetSubtitleReps: '{reps} · {total} total',
         catalogPushups15: '15 Push-ups',
+        catalogSquats15: '15 Squats',
+        tagHiit: 'HIIT',
+        tagStrength: 'Strength',
+        tagCardio: 'Cardio',
         templatePushups: '15 Push-ups',
         templatePushupsDesc: '15 push-ups with down/up sounds — easy down, strain up',
         pushupsLabel: 'Push-ups',
+        squatsLabel: 'Squats',
         storageFull: 'Could not save — storage full?',
         cannotDeleteLast: 'Cannot delete the last training',
         timerRunningConfirm: 'Timer is running. Pause and switch?',
@@ -862,6 +934,10 @@
         settings: 'Settings',
         language: 'Language',
         languageSystem: 'System',
+        back: 'Back',
+        close: 'Close',
+        play: 'Play',
+        pause: 'Pause',
         installApp: 'Install app',
         about: 'About',
         feedback: 'Feedback',
@@ -887,7 +963,7 @@
         installUnavailable: 'Install is not available in this browser.',
         googleDrive: 'Google Drive',
         googleDriveSubtitle: 'Sync and backup trainings',
-        googleDriveHelp: 'Sign in to sync trainings across devices and create share links. Files stay in your Google Drive.',
+        googleDriveHelp: 'Sign in to sync trainings across devices. Files stay in your Google Drive.',
         googleAccount: 'Account',
         googleNotSignedIn: 'Not signed in',
         googleLastSync: 'Last sync:',
@@ -906,19 +982,40 @@
         googleSyncFailed: 'Sync failed',
         googleSyncWhileEditing: 'You have unsaved Designer changes. Sync anyway? Remote updates may overwrite the training you are editing.',
         googleSyncDone: 'Synced ({pulled} in, {pushed} out)',
-        googleBackupDone: 'Backed up {n} training(s)',
+        googleBackupDone: 'Backed up {n}',
         googleNotConfigured: 'Google Drive is not configured yet',
         shareTraining: 'Share training',
         shareCopied: 'Share link copied',
         shareFailed: 'Could not create share link',
+        shareTooLarge: 'This training is too large to share as a link',
         shareNeedSignIn: 'Sign in with Google to share',
         sharedBannerTitle: 'Shared training',
         sharedDismiss: 'Dismiss',
         sharedSave: 'Save to My trainings',
         sharedSaved: 'Saved "{name}"',
+        sharedAlreadySaved: 'Already in your trainings',
+        sharedOpen: 'Open',
+        sharedOpened: 'Opened "{name}"',
         sharedLoadFailed: 'Could not open shared training',
+        pro: 'PRO',
+        proTitle: 'PRO — Trainer workspace',
+        proSubtitle: 'Trainer workspace',
+        proExplainer: 'For trainers and physiotherapists. Tag your library, select a set of trainings, and send patients links. They open a link to add that training in their app.',
+        proSelect: 'Select',
+        proDoneSelect: 'Done',
+        proShare: 'Share',
+        proCopy: 'Copy',
+        proShareCopied: 'Links copied',
+        proShareFailed: 'Could not share trainings',
+        proNoneSelected: 'Select at least one training',
+        proAllTags: 'All',
+        proAddTag: 'Add tag',
+        proTagPrompt: 'Tag name',
+        proEmptyFilter: 'No trainings with this tag',
+        proShareTitle: 'VPRAVA.ONLINE trainings',
         privacyPolicy: 'Privacy',
-        termsOfService: 'Terms'
+        termsOfService: 'Terms',
+        metaDescription: 'VPRAVA.ONLINE is a browser interval training timer. Design custom work/rest patterns and run workouts with visual and audio cues. Optional Google Drive sync keeps trainings in your own Drive folder.'
       },
       uk: {
         appTitle: 'VPRAVA.ONLINE',
@@ -938,7 +1035,7 @@
         addRest: 'Відпочинок',
         cycles: 'Цикли',
         cyclesCount: '{n} циклів',
-        cycleSummary: '{cycles} циклів × {segments} сегментів = {intervals} інтервалів',
+        cycleSummary: '{cycles} × {segments} = {intervals}',
         audioSynthesizer: 'Аудіосинтезатор',
         regularBeepPitch: 'Тон звичайного сигналу',
         finalEmphasisedPitch: 'Тон акцентованого сигналу',
@@ -997,12 +1094,17 @@
         readyToStart: 'Готово до старту',
         getReady: 'Приготуйтесь',
         go: 'Марш',
-        presetSubtitle: '{cycles} циклів · {total} загалом',
-        presetSubtitleReps: '{reps} повторів · {total} загалом',
+        presetSubtitle: '{cycles} · {total} загалом',
+        presetSubtitleReps: '{reps} · {total} загалом',
         catalogPushups15: '15 віджимань',
+        catalogSquats15: '15 присідань',
+        tagHiit: 'HIIT',
+        tagStrength: 'Сила',
+        tagCardio: 'Кардіо',
         templatePushups: '15 віджимань',
         templatePushupsDesc: '15 віджимань із звуками вниз/вгору — легко вниз, напруження вгору',
         pushupsLabel: 'Віджимання',
+        squatsLabel: 'Присідання',
         storageFull: 'Не вдалося зберегти — сховище переповнене?',
         cannotDeleteLast: 'Неможливо видалити останнє тренування',
         timerRunningConfirm: 'Таймер працює. Призупинити та перейти?',
@@ -1049,6 +1151,10 @@
         settings: 'Налаштування',
         language: 'Мова',
         languageSystem: 'Система',
+        back: 'Назад',
+        close: 'Закрити',
+        play: 'Старт',
+        pause: 'Пауза',
         installApp: 'Встановити застосунок',
         about: 'Про застосунок',
         feedback: 'Зворотний зв\'язок',
@@ -1074,7 +1180,7 @@
         installUnavailable: 'Встановлення недоступне в цьому браузері.',
         googleDrive: 'Google Drive',
         googleDriveSubtitle: 'Синхронізація та резервні копії',
-        googleDriveHelp: 'Увійдіть, щоб синхронізувати тренування між пристроями та ділитися посиланнями. Файли зберігаються у вашому Google Drive.',
+        googleDriveHelp: 'Увійдіть, щоб синхронізувати тренування між пристроями. Файли зберігаються у вашому Google Drive.',
         googleAccount: 'Обліковий запис',
         googleNotSignedIn: 'Не виконано вхід',
         googleLastSync: 'Остання синхронізація:',
@@ -1093,96 +1199,355 @@
         googleSyncFailed: 'Помилка синхронізації',
         googleSyncWhileEditing: 'Є незбережені зміни в Конструкторі. Синхронізувати все одно? Оновлення з Drive можуть перезаписати тренування, яке ви редагуєте.',
         googleSyncDone: 'Синхронізовано ({pulled} ← / {pushed} →)',
-        googleBackupDone: 'Збережено {n} тренувань',
+        googleBackupDone: 'Збережено {n}',
         googleNotConfigured: 'Google Drive ще не налаштовано',
         shareTraining: 'Поділитися тренуванням',
         shareCopied: 'Посилання скопійовано',
         shareFailed: 'Не вдалося створити посилання',
+        shareTooLarge: 'Це тренування завелике для посилання',
         shareNeedSignIn: 'Увійдіть через Google, щоб поділитися',
         sharedBannerTitle: 'Спільне тренування',
         sharedDismiss: 'Закрити',
         sharedSave: 'Зберегти до моїх',
         sharedSaved: 'Збережено «{name}»',
+        sharedAlreadySaved: 'Уже є у ваших тренуваннях',
+        sharedOpen: 'Відкрити',
+        sharedOpened: 'Відкрито «{name}»',
         sharedLoadFailed: 'Не вдалося відкрити спільне тренування',
+        pro: 'PRO',
+        proTitle: 'PRO — Робочий простір тренера',
+        proSubtitle: 'Робочий простір тренера',
+        proExplainer: 'Для тренерів і фізіотерапевтів. Позначайте бібліотеку мітками, обирайте набір тренувань і надсилайте пацієнтам посилання. Вони відкривають посилання, щоб додати тренування у свій застосунок.',
+        proSelect: 'Вибрати',
+        proDoneSelect: 'Готово',
+        proShare: 'Поділитися',
+        proCopy: 'Копіювати',
+        proShareCopied: 'Посилання скопійовано',
+        proShareFailed: 'Не вдалося поділитися тренуваннями',
+        proNoneSelected: 'Оберіть хоча б одне тренування',
+        proAllTags: 'Усі',
+        proAddTag: 'Додати мітку',
+        proTagPrompt: 'Назва мітки',
+        proEmptyFilter: 'Немає тренувань із цією міткою',
+        proShareTitle: 'Тренування VPRAVA.ONLINE',
         privacyPolicy: 'Конфіденційність',
-        termsOfService: 'Умови'
+        termsOfService: 'Умови',
+        metaDescription: 'VPRAVA.ONLINE — браузерний таймер інтервальних тренувань. Створюйте власні патерни роботи/відпочинку та проводьте тренування з візуальними й звуковими підказками. За бажанням синхронізуйте тренування у власну папку Google Drive.'
+      },
+      ru: {
+        appTitle: 'VPRAVA.ONLINE',
+        appTagline: 'Таймер интервальных тренировок — свои work/rest паттерны с визуальными и звуковыми подсказками.',
+        ready: 'Готово',
+        cycle: 'Цикл',
+        tapPlayAudio: 'Нажмите Play, чтобы включить звук',
+        trainingDesigner: 'Конструктор тренировки',
+        newBtn: '+ Новая',
+        cloneBtn: 'Клон',
+        clonedPresetName: '{name} (копия)',
+        trainingCloned: 'Склонировано как новая тренировка',
+        totalDuration: 'Общая длительность:',
+        patternSegments: 'Сегменты паттерна',
+        addWork: 'Работа',
+        addReps: 'Повторения',
+        addRest: 'Отдых',
+        cycles: 'Циклы',
+        cyclesCount: '{n} циклов',
+        cycleSummary: '{cycles} × {segments} = {intervals}',
+        audioSynthesizer: 'Аудиосинтезатор',
+        regularBeepPitch: 'Тон обычного сигнала',
+        finalEmphasisedPitch: 'Тон акцентированного сигнала',
+        trainingName: 'Название тренировки',
+        trainingNamePlaceholder: 'напр. Табата, HIIT спринт...',
+        makeDefault: 'Сделать тренировкой по умолчанию',
+        saveTraining: 'Сохранить тренировку',
+        updateTraining: 'Обновить тренировку',
+        deleteTraining: 'Удалить тренировку',
+        trainingManager: 'Менеджер тренировок',
+        noSavedTrainings: 'Пока нет сохранённых тренировок',
+        emptyHint: 'Создайте свой первый интервальный паттерн в Конструкторе',
+        createTraining: 'Создать тренировку',
+        reset: 'Сброс',
+        skip: 'Пропустить',
+        tabDesigner: 'Конструктор',
+        tabTimer: 'Таймер',
+        tabManager: 'Менеджер',
+        done: 'Готово!',
+        defaultPresetName: 'По умолчанию',
+        badgeDefault: 'По умолчанию',
+        badgeActive: 'Активная',
+        work: 'Работа',
+        rest: 'Отдых',
+        workModeTime: 'Время',
+        workModeReps: 'Повторы',
+        reps: 'Повторы',
+        repsCount: '{n} повторов',
+        phaseOrder: 'Паттерн',
+        phaseDownThenUp: 'Вниз → Вверх',
+        phaseUpThenDown: 'Вверх → Вниз',
+        phaseDownThenUpHint: 'Легко вниз, напряжение вверх — присед, отжимание',
+        phaseUpThenDownHint: 'Напряжение вверх, отпускание вниз — подтягивание',
+        phaseDown: 'Вниз',
+        phaseUp: 'Вверх',
+        secondsDecimal: '{n} с',
+        duration: 'Длительность',
+        pace: 'Темп',
+        previewPace: 'Прослушать блок',
+        previewPattern: 'Прослушать паттерн',
+        stopPreview: 'Остановить',
+        paceMultiplier: '{n}×',
+        optionalLabel: 'Необязательная метка (напр. Спринт)',
+        moveUp: 'Переместить вверх',
+        moveDown: 'Переместить вниз',
+        decrease: 'Уменьшить',
+        increase: 'Увеличить',
+        deleteSegment: 'Удалить сегмент',
+        editTraining: 'Редактировать тренировку',
+        reorderTraining: 'Перетащите, чтобы изменить порядок',
+        workInterval: 'Рабочий интервал',
+        restInterval: 'Интервал отдыха',
+        pauseCycle: 'Пауза цикла',
+        completed: 'Завершено',
+        allDone: 'Всё готово!',
+        readyToStart: 'Готово к старту',
+        getReady: 'Приготовьтесь',
+        go: 'Марш',
+        presetSubtitle: '{cycles} · {total} всего',
+        presetSubtitleReps: '{reps} · {total} всего',
+        catalogPushups15: '15 отжиманий',
+        catalogSquats15: '15 приседаний',
+        tagHiit: 'HIIT',
+        tagStrength: 'Сила',
+        tagCardio: 'Кардио',
+        templatePushups: '15 отжиманий',
+        templatePushupsDesc: '15 отжиманий со звуками вниз/вверх — легко вниз, напряжение вверх',
+        pushupsLabel: 'Отжимания',
+        squatsLabel: 'Приседания',
+        storageFull: 'Не удалось сохранить — хранилище переполнено?',
+        cannotDeleteLast: 'Нельзя удалить последнюю тренировку',
+        timerRunningConfirm: 'Таймер работает. Приостановить и перейти?',
+        enterTrainingName: 'Введите название тренировки',
+        addWorkSegment: 'Добавьте хотя бы один рабочий сегмент',
+        savedPreset: 'Сохранено «{name}»',
+        deleteConfirm: 'Удалить «{name}»?',
+        trainingDeleted: 'Тренировка удалена',
+        loadedPreset: 'Загружено «{name}»',
+        trainingComplete: 'Тренировка завершена!',
+        timerReset: 'Таймер сброшен',
+        segments: 'сегментов',
+        intervals: 'интервалов',
+        templatePreset: 'Начать с шаблона',
+        templateChoose: '— Выберите шаблон —',
+        templateLoaded: 'Загружено «{name}» — настройте и сохраните',
+        templateTabata: 'Табата',
+        templateTabataDesc: '20 с работы / 10 с отдыха × 8 — классическая Табата',
+        templateClassic: 'Классическая',
+        templateClassicDesc: '10 с работы / 3 с отдыха × 10 — паттерн по умолчанию',
+        templateHiit3015: 'HIIT 30/15',
+        templateHiit3015Desc: '30 с работы / 15 с отдыха × 10 — стандартные HIIT интервалы',
+        templateEmom: 'EMOM',
+        templateEmomDesc: '60 с работы каждую минуту × 12 — без встроенного отдыха',
+        templateSprint: 'Спринт-интервалы',
+        templateSprintDesc: '15 с спринт / 45 с восстановление × 10',
+        templateGibala: 'Метод Гибалы',
+        templateGibalaDesc: '60 с работы / 75 с отдыха × 8 — исследовательский HIIT протокол',
+        templateNorwegian: 'Норвежский 4×4',
+        templateNorwegianDesc: '4 мин работы / 3 мин отдыха × 4 — классика аэробных интервалов',
+        templateBoxing: 'Боксёрские раунды',
+        templateBoxingDesc: '3 мин раунды / 1 мин отдыха × 12',
+        template3030: '30-30',
+        template3030Desc: '30 с работы / 30 с отдыха × 10 — сбалансированная нагрузка',
+        templateWingate: 'Спринты Вингейта',
+        templateWingateDesc: '30 с на максимум / 4 мин отдыха × 4 — протокол максимальных спринтов',
+        templatePyramid: 'Пирамида',
+        templatePyramidDesc: '20→30→40 с работы с отдыхом, × 2 цикла',
+        pyramidLabelSprint: 'Спринт',
+        pyramidLabelPush: 'Натиск',
+        pyramidLabelPeak: 'Пик',
+        hz: '{n} Гц',
+        secondsShort: '{n}',
+        settings: 'Настройки',
+        language: 'Язык',
+        languageSystem: 'Система',
+        back: 'Назад',
+        close: 'Закрыть',
+        play: 'Старт',
+        pause: 'Пауза',
+        installApp: 'Установить приложение',
+        about: 'О приложении',
+        feedback: 'Обратная связь',
+        feedbackTelegram: 'telegram: @oleksiiko',
+        updateAvailable: 'Доступно обновление',
+        updateRefresh: 'Обновить',
+        updateLater: 'Позже',
+        appUpdated: 'Обновлено до v{version}',
+        swRegisterFailed: 'Не удалось обновить офлайн-кэш',
+        installTitle: 'Установить VPRAVA.ONLINE',
+        installBody: 'Добавьте на главный экран для полноэкранного режима и быстрого запуска — работает офлайн после первого посещения.',
+        installBtn: 'Установить',
+        notNow: 'Не сейчас',
+        dontAskAgain: 'Больше не спрашивать',
+        aboutDescription: 'Создавайте свои паттерны работы/отдыха и проводите интервальные тренировки с визуальными и звуковыми сигналами.',
+        aboutAuthor: 'Автор',
+        aboutGithub: 'GitHub',
+        aboutLicense: 'Лицензия',
+        aboutWebsite: 'Веб-сайт',
+        aboutVersion: 'Версия',
+        iosInstallHint: 'Нажмите «Поделиться» в Safari, затем выберите «На экран Домой».',
+        androidInstallHint: 'Нажмите меню (⋮) в браузере и выберите «Установить приложение» или «На главный экран».',
+        installUnavailable: 'Установка недоступна в этом браузере.',
+        googleDrive: 'Google Drive',
+        googleDriveSubtitle: 'Синхронизация и резервные копии',
+        googleDriveHelp: 'Войдите, чтобы синхронизировать тренировки между устройствами. Файлы хранятся в вашем Google Drive.',
+        googleAccount: 'Аккаунт',
+        googleNotSignedIn: 'Вход не выполнен',
+        googleLastSync: 'Последняя синхронизация:',
+        googleNeverSynced: 'Никогда',
+        googleSignIn: 'Войти через Google',
+        googleSignOut: 'Выйти',
+        googleReconnect: 'Подключить Google снова',
+        googleNeedsReconnect: 'Сеанс истёк — подключите снова',
+        googleSyncNow: 'Синхронизировать',
+        googleBackupOnly: 'Только резервная копия',
+        googleAutoBackup: 'Авторезервирование',
+        googleSyncing: 'Синхронизация…',
+        googleSynced: 'Синхронизировано',
+        googleSignedIn: 'Вход выполнен',
+        googleSignInFailed: 'Не удалось войти через Google',
+        googleSyncFailed: 'Ошибка синхронизации',
+        googleSyncWhileEditing: 'Есть несохранённые изменения в Конструкторе. Синхронизировать всё равно? Обновления из Drive могут перезаписать тренировку, которую вы редактируете.',
+        googleSyncDone: 'Синхронизировано ({pulled} ← / {pushed} →)',
+        googleBackupDone: 'Сохранено {n}',
+        googleNotConfigured: 'Google Drive ещё не настроен',
+        shareTraining: 'Поделиться тренировкой',
+        shareCopied: 'Ссылка скопирована',
+        shareFailed: 'Не удалось создать ссылку',
+        shareTooLarge: 'Эта тренировка слишком большая для ссылки',
+        shareNeedSignIn: 'Войдите через Google, чтобы поделиться',
+        sharedBannerTitle: 'Общая тренировка',
+        sharedDismiss: 'Закрыть',
+        sharedSave: 'Сохранить в мои',
+        sharedSaved: 'Сохранено «{name}»',
+        sharedAlreadySaved: 'Уже есть в ваших тренировках',
+        sharedOpen: 'Открыть',
+        sharedOpened: 'Открыто «{name}»',
+        sharedLoadFailed: 'Не удалось открыть общую тренировку',
+        pro: 'PRO',
+        proTitle: 'PRO — Рабочее пространство тренера',
+        proSubtitle: 'Рабочее пространство тренера',
+        proExplainer: 'Для тренеров и физиотерапевтов. Помечайте библиотеку метками, выбирайте набор тренировок и отправляйте пациентам ссылки. Они открывают ссылку, чтобы добавить тренировку в своё приложение.',
+        proSelect: 'Выбрать',
+        proDoneSelect: 'Готово',
+        proShare: 'Поделиться',
+        proCopy: 'Копировать',
+        proShareFailed: 'Не удалось поделиться тренировками',
+        proShareCopied: 'Ссылки скопированы',
+        proNoneSelected: 'Выберите хотя бы одну тренировку',
+        proAllTags: 'Все',
+        proAddTag: 'Добавить метку',
+        proTagPrompt: 'Название метки',
+        proEmptyFilter: 'Нет тренировок с этой меткой',
+        proShareTitle: 'Тренировки VPRAVA.ONLINE',
+        privacyPolicy: 'Конфиденциальность',
+        termsOfService: 'Условия',
+        metaDescription: 'VPRAVA.ONLINE — браузерный таймер интервальных тренировок. Создавайте свои паттерны работы/отдыха и проводите тренировки с визуальными и звуковыми подсказками. При желании синхронизируйте тренировки в собственную папку Google Drive.'
+      }
+    };
+
+    const PLURALS = {
+      en: {
+        cycles: { one: '{n} cycle', other: '{n} cycles' },
+        reps: { one: '{n} rep', other: '{n} reps' },
+        trainings: { one: '{n} training', other: '{n} trainings' },
+        segments: { one: '{n} segment', other: '{n} segments' },
+        intervals: { one: '{n} interval', other: '{n} intervals' }
+      },
+      uk: {
+        cycles: { one: '{n} цикл', few: '{n} цикли', many: '{n} циклів' },
+        reps: { one: '{n} повтор', few: '{n} повтори', many: '{n} повторів' },
+        trainings: { one: '{n} тренування', few: '{n} тренування', many: '{n} тренувань' },
+        segments: { one: '{n} сегмент', few: '{n} сегменти', many: '{n} сегментів' },
+        intervals: { one: '{n} інтервал', few: '{n} інтервали', many: '{n} інтервалів' }
+      },
+      ru: {
+        cycles: { one: '{n} цикл', few: '{n} цикла', many: '{n} циклов' },
+        reps: { one: '{n} повтор', few: '{n} повтора', many: '{n} повторов' },
+        trainings: { one: '{n} тренировка', few: '{n} тренировки', many: '{n} тренировок' },
+        segments: { one: '{n} сегмент', few: '{n} сегмента', many: '{n} сегментов' },
+        intervals: { one: '{n} интервал', few: '{n} интервала', many: '{n} интервалов' }
       }
     };
 
     let currentLocale = 'en';
-    const LOCALE_STORAGE_KEY = 'app_locale';
 
     function detectLocale() {
-      const langs = navigator.languages?.length
-        ? [...navigator.languages]
-        : [navigator.language || 'en'];
-      for (const lang of langs) {
-        const code = lang.toLowerCase().split('-')[0];
-        if (code === 'uk' || code === 'ru') return 'uk';
-      }
-      return 'en';
+      return (window.AppLocale && AppLocale.detectLocale()) || 'en';
     }
 
     function loadStoredLocale() {
-      try {
-        const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-        if (stored === 'en' || stored === 'uk') return stored;
-      } catch (e) {
-        // ignore
-      }
-      return null;
+      return (window.AppLocale && AppLocale.loadStoredLocale()) || null;
     }
 
     function resolveLocale() {
-      return loadStoredLocale() || detectLocale();
+      return (window.AppLocale && AppLocale.resolveLocale()) || detectLocale();
     }
 
-    function updateLanguageButtons() {
-      const stored = loadStoredLocale();
-      const languageGroup = document.getElementById('languageGroup');
-      if (languageGroup) languageGroup.setAttribute('aria-label', t('language'));
+    function isSupportedLocale(locale) {
+      if (window.AppLocale && typeof AppLocale.isSupportedLocale === 'function') {
+        return AppLocale.isSupportedLocale(locale);
+      }
+      return locale === 'system' || locale === 'en' || locale === 'uk' || locale === 'ru';
+    }
 
-      document.querySelectorAll('.lang-option').forEach((btn) => {
-        const mode = btn.dataset.locale;
-        const selected = stored === null ? mode === 'system' : mode === stored;
-        btn.classList.toggle('border-emerald-500/50', selected);
-        btn.classList.toggle('bg-emerald-500/15', selected);
-        btn.classList.toggle('text-emerald-300', selected);
-        btn.classList.toggle('border-neutral-700', !selected);
-        btn.classList.toggle('bg-neutral-950', !selected);
-        btn.classList.toggle('text-neutral-300', !selected);
-        btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
-      });
+    function persistLocalePreference(locale) {
+      if (window.AppLocale && typeof AppLocale.persistLocalePreference === 'function') {
+        AppLocale.persistLocalePreference(locale);
+        return;
+      }
+      try {
+        if (locale === 'system') localStorage.removeItem('app_locale');
+        else if (locale === 'en' || locale === 'uk' || locale === 'ru') {
+          localStorage.setItem('app_locale', locale);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    function updateLanguageSelect() {
+      const select = document.getElementById('languageSelect');
+      if (!select) return;
+
+      const stored = loadStoredLocale();
+      const value = stored === null ? 'system' : stored;
+      select.setAttribute('aria-label', t('language'));
+      const systemOpt = select.querySelector('option[value="system"]');
+      if (systemOpt) systemOpt.textContent = t('languageSystem');
+      if (select.value !== value) select.value = value;
     }
 
     function setLocale(locale) {
-      if (locale !== 'en' && locale !== 'uk' && locale !== 'system') return;
+      if (!isSupportedLocale(locale)) return;
 
       const nextLocale = locale === 'system' ? detectLocale() : locale;
       const storedBefore = loadStoredLocale();
       const modeBefore = storedBefore === null ? 'system' : storedBefore;
       if (locale === modeBefore && nextLocale === currentLocale) {
-        updateLanguageButtons();
+        updateLanguageSelect();
         return;
       }
 
       currentLocale = nextLocale;
-      try {
-        if (locale === 'system') localStorage.removeItem(LOCALE_STORAGE_KEY);
-        else localStorage.setItem(LOCALE_STORAGE_KEY, locale);
-      } catch (e) {
-        // ignore
-      }
+      persistLocalePreference(locale);
       applyStaticI18n();
       applyDynamicI18n();
-      updateLanguageButtons();
+      updateLanguageSelect();
       updateInstallModalHints();
+      if (typeof refreshDriveSettingsUi === 'function') void refreshDriveSettingsUi();
       if (!settingsOverlay.classList.contains('hidden')) {
         if (!settingsAboutView.classList.contains('hidden')) {
           settingsTitle.textContent = t('about');
         } else if (settingsDriveView && !settingsDriveView.classList.contains('hidden')) {
           settingsTitle.textContent = t('googleDrive');
-          void refreshDriveSettingsUi();
         } else {
           settingsTitle.textContent = t('settings');
         }
@@ -1200,9 +1565,40 @@
       return str;
     }
 
+    function pluralCategory(n) {
+      const abs = Math.abs(Math.floor(Number(n))) || 0;
+      if (currentLocale === 'uk' || currentLocale === 'ru') {
+        const mod10 = abs % 10;
+        const mod100 = abs % 100;
+        if (mod10 === 1 && mod100 !== 11) return 'one';
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'few';
+        return 'many';
+      }
+      return abs === 1 ? 'one' : 'other';
+    }
+
+    function tp(unit, n) {
+      const pack = (PLURALS[currentLocale] && PLURALS[currentLocale][unit]) || PLURALS.en[unit];
+      if (!pack) return String(n);
+      const cat = pluralCategory(n);
+      const str = pack[cat] || pack.other || pack.many || String(n);
+      return str.replace(/\{n\}/g, String(n));
+    }
+
+    function applyPlayPauseLabel() {
+      const btn = document.getElementById('playBtn');
+      const pauseIcon = document.getElementById('pauseIconSvg');
+      if (!btn) return;
+      const playing = pauseIcon && !pauseIcon.classList.contains('hidden');
+      btn.setAttribute('aria-label', playing ? t('pause') : t('play'));
+    }
+
     function applyStaticI18n() {
-      document.documentElement.lang = currentLocale === 'uk' ? 'uk' : 'en';
+      document.documentElement.lang = currentLocale;
+      document.documentElement.classList.remove('i18n-pending');
       document.title = t('appTitle');
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute('content', t('metaDescription'));
 
       document.querySelectorAll('[data-i18n]').forEach(el => {
         el.textContent = t(el.dataset.i18n);
@@ -1210,8 +1606,12 @@
       document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         el.placeholder = t(el.dataset.i18nPlaceholder);
       });
+      document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+        el.setAttribute('aria-label', t(el.dataset.i18nAria));
+      });
+      applyPlayPauseLabel();
 
-      populateTemplateDropdown();
+      if (typeof populateTemplateDropdown === 'function') populateTemplateDropdown();
     }
 
     function applyDynamicI18n() {
@@ -1228,6 +1628,8 @@
         savePresetBtn.textContent = designerEditId ? t('updateTraining') : t('saveTraining');
       }
       updateDesignerActionButtons();
+      if (typeof renderProList === 'function') renderProList();
+      if (typeof refreshSharedBannerI18n === 'function') refreshSharedBannerI18n();
       const designerSteppers = [
         cyclesDecBtn, cyclesIncBtn,
         pitchNormalDecBtn, pitchNormalIncBtn,
@@ -1263,6 +1665,13 @@
     const REPS_DEFAULT = 15;
     const PHASE_ORDER_DEFAULT = 'up_then_down';
     const CATALOG_PUSHUPS_ID = 'catalog-pushups-15';
+    const CATALOG_SQUATS_ID = 'catalog-squats-15';
+    const CATALOG_TABATA_ID = 'catalog-tabata';
+    const CATALOG_HIIT3015_ID = 'catalog-hiit-3015';
+    const CATALOG_SPRINT_ID = 'catalog-sprint';
+    const CATALOG_BOXING_ID = 'catalog-boxing';
+    const CATALOG_PYRAMID_ID = 'catalog-pyramid';
+    const CATALOG_3030_ID = 'catalog-3030';
     const CATALOG_PUSHUPS_DOWN_MS = 900;
     const CATALOG_PUSHUPS_UP_MS = 1100;
 
@@ -1370,8 +1779,27 @@
       return seg;
     }
 
+    function normalizeTags(tags) {
+      if (!Array.isArray(tags)) return [];
+      const seen = new Set();
+      const out = [];
+      for (const raw of tags) {
+        const name = String(raw || '').trim().slice(0, 32);
+        if (!name) continue;
+        const key = name.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(name);
+      }
+      return out;
+    }
+
     function normalizePreset(preset) {
-      preset.segments = preset.segments.map(s => normalizeSegment({ ...s }));
+      if (!preset || typeof preset !== 'object') return preset;
+      preset.segments = Array.isArray(preset.segments)
+        ? preset.segments.map(s => normalizeSegment({ ...s }))
+        : [];
+      preset.tags = normalizeTags(preset.tags);
       return preset;
     }
 
@@ -1424,42 +1852,200 @@
       };
     }
 
-    function buildCatalogPushupsPreset() {
+    function buildCatalogPreset({
+      id,
+      nameKey,
+      sortOrder,
+      cycles,
+      audio,
+      segments,
+      tagKeys
+    }) {
       const now = Date.now();
-      return {
-        id: CATALOG_PUSHUPS_ID,
-        name: t('catalogPushups15'),
-        nameKey: 'catalogPushups15',
+      return normalizePreset({
+        id,
+        name: t(nameKey),
+        nameKey,
         isDefault: false,
-        sortOrder: 1,
+        sortOrder,
         createdAt: now,
         updatedAt: now,
+        cycles,
+        segments,
+        audio,
+        tags: (tagKeys || []).map(key => t(key))
+      });
+    }
+
+    function catalogRepsBlock({ reps, phaseOrder, downMs, upMs, labelKey }) {
+      return createRepsSegment({ reps, phaseOrder, downMs, upMs, labelKey });
+    }
+
+    function catalogTimeBlock(kind, duration, labelKey) {
+      return createSegment(kind, duration, '', labelKey || null);
+    }
+
+    function buildCatalogPushupsPreset() {
+      return buildCatalogPreset({
+        id: CATALOG_PUSHUPS_ID,
+        nameKey: 'catalogPushups15',
+        sortOrder: 1,
         cycles: 1,
+        audio: { pitchNormal: 640, pitchHeavy: 1180 },
+        tagKeys: ['tagStrength'],
         segments: [
-          createRepsSegment({
+          catalogRepsBlock({
             reps: 15,
             phaseOrder: 'down_then_up',
             downMs: CATALOG_PUSHUPS_DOWN_MS,
             upMs: CATALOG_PUSHUPS_UP_MS,
             labelKey: 'pushupsLabel'
           })
-        ],
-        audio: { pitchNormal: 640, pitchHeavy: 1180 }
-      };
+        ]
+      });
     }
+
+    function buildCatalogSquatsPreset() {
+      return buildCatalogPreset({
+        id: CATALOG_SQUATS_ID,
+        nameKey: 'catalogSquats15',
+        sortOrder: 2,
+        cycles: 1,
+        audio: { pitchNormal: 640, pitchHeavy: 1180 },
+        tagKeys: ['tagStrength'],
+        segments: [
+          catalogRepsBlock({
+            reps: 15,
+            phaseOrder: 'down_then_up',
+            downMs: CATALOG_PUSHUPS_DOWN_MS,
+            upMs: CATALOG_PUSHUPS_UP_MS,
+            labelKey: 'squatsLabel'
+          })
+        ]
+      });
+    }
+
+    function buildCatalogTabataPreset() {
+      return buildCatalogPreset({
+        id: CATALOG_TABATA_ID,
+        nameKey: 'templateTabata',
+        sortOrder: 3,
+        cycles: 8,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 },
+        tagKeys: ['tagHiit'],
+        segments: [
+          catalogTimeBlock('work', 20),
+          catalogTimeBlock('rest', 10)
+        ]
+      });
+    }
+
+    function buildCatalogHiit3015Preset() {
+      return buildCatalogPreset({
+        id: CATALOG_HIIT3015_ID,
+        nameKey: 'templateHiit3015',
+        sortOrder: 4,
+        cycles: 10,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 },
+        tagKeys: ['tagHiit'],
+        segments: [
+          catalogTimeBlock('work', 30),
+          catalogTimeBlock('rest', 15)
+        ]
+      });
+    }
+
+    function buildCatalogSprintPreset() {
+      return buildCatalogPreset({
+        id: CATALOG_SPRINT_ID,
+        nameKey: 'templateSprint',
+        sortOrder: 5,
+        cycles: 10,
+        audio: { pitchNormal: 900, pitchHeavy: 1300 },
+        tagKeys: ['tagHiit', 'tagCardio'],
+        segments: [
+          catalogTimeBlock('work', 15),
+          catalogTimeBlock('rest', 45)
+        ]
+      });
+    }
+
+    function buildCatalogBoxingPreset() {
+      return buildCatalogPreset({
+        id: CATALOG_BOXING_ID,
+        nameKey: 'templateBoxing',
+        sortOrder: 6,
+        cycles: 12,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 },
+        tagKeys: ['tagCardio'],
+        segments: [
+          catalogTimeBlock('work', 180),
+          catalogTimeBlock('rest', 60)
+        ]
+      });
+    }
+
+    function buildCatalogPyramidPreset() {
+      return buildCatalogPreset({
+        id: CATALOG_PYRAMID_ID,
+        nameKey: 'templatePyramid',
+        sortOrder: 7,
+        cycles: 2,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 },
+        tagKeys: ['tagHiit'],
+        segments: [
+          catalogTimeBlock('work', 20, 'pyramidLabelSprint'),
+          catalogTimeBlock('rest', 10),
+          catalogTimeBlock('work', 30, 'pyramidLabelPush'),
+          catalogTimeBlock('rest', 15),
+          catalogTimeBlock('work', 40, 'pyramidLabelPeak'),
+          catalogTimeBlock('rest', 20)
+        ]
+      });
+    }
+
+    function buildCatalog3030Preset() {
+      return buildCatalogPreset({
+        id: CATALOG_3030_ID,
+        nameKey: 'template3030',
+        sortOrder: 8,
+        cycles: 10,
+        audio: { pitchNormal: 800, pitchHeavy: 1200 },
+        tagKeys: ['tagHiit'],
+        segments: [
+          catalogTimeBlock('work', 30),
+          catalogTimeBlock('rest', 30)
+        ]
+      });
+    }
+
+    const CATALOG_BUILDERS = [
+      buildCatalogPushupsPreset,
+      buildCatalogSquatsPreset,
+      buildCatalogTabataPreset,
+      buildCatalogHiit3015Preset,
+      buildCatalogSprintPreset,
+      buildCatalogBoxingPreset,
+      buildCatalogPyramidPreset,
+      buildCatalog3030Preset
+    ];
 
     function ensureCatalogPresets() {
       if (!appStore || !Array.isArray(appStore.presets)) return false;
       ensureDeletedTrainingsArray();
-      if (getPresetById(CATALOG_PUSHUPS_ID)) return false;
-      if (getDeletedTrainings().some(entry => entry.id === CATALOG_PUSHUPS_ID)) return false;
-      const preset = buildCatalogPushupsPreset();
-      const maxOrder = appStore.presets.reduce((max, p) => (
-        Math.max(max, typeof p.sortOrder === 'number' ? p.sortOrder : -1)
-      ), -1);
-      preset.sortOrder = maxOrder + 1;
-      appStore.presets.push(preset);
-      return true;
+      let added = false;
+      CATALOG_BUILDERS.forEach(build => {
+        const preset = build();
+        if (getPresetById(preset.id)) return;
+        if (getDeletedTrainings().some(entry => entry.id === preset.id)) return;
+        const maxOrder = appStore.presets.reduce((max, p) => (
+          Math.max(max, typeof p.sortOrder === 'number' ? p.sortOrder : -1)
+        ), -1);
+        preset.sortOrder = maxOrder + 1;
+        appStore.presets.push(preset);
+        added = true;
+      });
+      return added;
     }
 
     function migrateCatalogPushupsPreset() {
@@ -1477,12 +2063,16 @@
 
     function createSeedStore() {
       const preset = createDefaultPreset();
-      const pushups = buildCatalogPushupsPreset();
+      const catalog = CATALOG_BUILDERS.map((build, index) => {
+        const item = build();
+        item.sortOrder = index + 1;
+        return item;
+      });
       return {
         version: 1,
         defaultPresetId: preset.id,
         activePresetId: preset.id,
-        presets: [preset, pushups],
+        presets: [preset, ...catalog],
         deletedTrainings: []
       };
     }
@@ -1601,6 +2191,14 @@
 
     function getPresetById(id) {
       return appStore.presets.find(p => p.id === id) || null;
+    }
+
+    function uniquifyPresetName(name) {
+      const existingNames = appStore.presets.map(p => resolvePresetName(p).toLowerCase());
+      if (!existingNames.includes(name.toLowerCase())) return name;
+      let suffix = 2;
+      while (existingNames.includes(`${name.toLowerCase()} (${suffix})`)) suffix++;
+      return `${name} (${suffix})`;
     }
 
     function savePreset(preset) {
@@ -2016,9 +2614,9 @@
         seg.kind === 'rest' || isRepsSegment(seg)
       ));
       if (onlyRepsWork) {
-        return t('presetSubtitleReps', { reps: repsTotal * preset.cycles, total });
+        return t('presetSubtitleReps', { reps: tp('reps', repsTotal * preset.cycles), total });
       }
-      return t('presetSubtitle', { cycles: preset.cycles, total });
+      return t('presetSubtitle', { cycles: tp('cycles', preset.cycles), total });
     }
 
     // =========================================================================
@@ -2485,11 +3083,11 @@
       const total = Math.round(segTotal * designerDraft.cycles);
       designerTotalDuration.textContent = formatDuration(total);
       designerCycleSummary.textContent = t('cycleSummary', {
-        cycles: designerDraft.cycles,
-        segments: designerDraft.segments.length,
-        intervals: designerDraft.cycles * designerDraft.segments.length
+        cycles: tp('cycles', designerDraft.cycles),
+        segments: tp('segments', designerDraft.segments.length),
+        intervals: tp('intervals', designerDraft.cycles * designerDraft.segments.length)
       });
-      cyclesVal.textContent = t('cyclesCount', { n: designerDraft.cycles });
+      cyclesVal.textContent = tp('cycles', designerDraft.cycles);
       if (typeof cyclesSliderCtrl !== 'undefined') {
         cyclesSliderCtrl.setValue(designerDraft.cycles, false);
         cyclesSteppers.syncDisabled(designerDraft.cycles);
@@ -2571,7 +3169,7 @@
             <span class="text-xs font-bold uppercase tracking-wide text-neutral-400">${t('reps')}</span>
             <div class="flex items-center gap-1.5">
               <button type="button" class="reps-dec stepper-btn" aria-label="${t('decrease')}">−</button>
-              <span class="reps-val text-xs font-mono font-bold text-sky-300 min-w-[4.5rem] text-center">${t('repsCount', { n: getRepsCount(seg) })}</span>
+              <span class="reps-val text-xs font-mono font-bold text-sky-300 min-w-[4.5rem] text-center">${tp('reps', getRepsCount(seg))}</span>
               <button type="button" class="reps-inc stepper-btn" aria-label="${t('increase')}">+</button>
               <button type="button" class="pace-preview-btn p-1.5 rounded-lg text-neutral-400 hover:text-sky-300 hover:bg-sky-500/10 transition-colors" aria-label="${t('previewPace')}" title="${t('previewPace')}">
                 <i data-lucide="volume-2" class="w-3.5 h-3.5"></i>
@@ -2725,7 +3323,7 @@
             onValueChange: (value) => {
               seg.reps = value;
               seg.duration = value;
-              repsVal.textContent = t('repsCount', { n: value });
+              repsVal.textContent = tp('reps', value);
               repsSteppers.syncDisabled(value);
               updateDesignerSummary();
               markDesignerModified();
@@ -2941,7 +3539,8 @@
         updatedAt: now,
         segments: designerDraft.segments.map(s => normalizeSegment({ ...s })),
         cycles: designerDraft.cycles,
-        audio: { ...designerDraft.audio }
+        audio: { ...designerDraft.audio },
+        tags: normalizeTags(existing?.tags)
       };
       if (existing?.nameKey && name === t(existing.nameKey)) {
         preset.nameKey = existing.nameKey;
@@ -2986,6 +3585,7 @@
         managerEmpty.classList.remove('hidden');
         managerEmpty.classList.add('flex');
         presetList.classList.add('hidden');
+        renderProList();
         return;
       }
 
@@ -3023,7 +3623,7 @@
               <i data-lucide="chevron-down" class="w-4 h-4"></i>
             </button>
           </div>
-          <button type="button" class="share-preset-btn shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors active:scale-95 ${window.TimerDrive && window.TimerDrive.isGoogleDriveEnabled && window.TimerDrive.isGoogleDriveEnabled() ? '' : 'hidden'}" aria-label="${t('shareTraining')}">
+          <button type="button" class="share-preset-btn shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors active:scale-95" aria-label="${t('shareTraining')}">
             <i data-lucide="share-2" class="w-5 h-5"></i>
           </button>
           <button type="button" class="edit-preset-btn shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white hover:bg-neutral-700 transition-colors active:scale-95" aria-label="${t('editTraining')}">
@@ -3072,6 +3672,7 @@
       });
 
       lucide.createIcons();
+      renderProList();
     }
 
     let managerDragState = null;
@@ -3745,6 +4346,7 @@
         pauseIconSvg.classList.add('hidden');
         playBtn.className = `${playBtnBaseClass} bg-emerald-500 hover:bg-emerald-400 text-neutral-950 shadow-lg shadow-emerald-500/20`;
       }
+      applyPlayPauseLabel();
     }
 
     function processSecondTick() {
@@ -4336,12 +4938,25 @@
     const driveAutoSyncRow = document.getElementById('driveAutoSyncRow');
     const driveAutoSyncToggle = document.getElementById('driveAutoSyncToggle');
     const sharedTrainingBanner = document.getElementById('sharedTrainingBanner');
+    const sharedBannerKicker = document.getElementById('sharedBannerKicker');
     const sharedTrainingName = document.getElementById('sharedTrainingName');
     const sharedTrainingMeta = document.getElementById('sharedTrainingMeta');
     const sharedTrainingSaveBtn = document.getElementById('sharedTrainingSaveBtn');
     const sharedTrainingDismissBtn = document.getElementById('sharedTrainingDismissBtn');
+    const settingsProBtn = document.getElementById('settingsProBtn');
+    const managerProBtn = document.getElementById('managerProBtn');
+    const proOverlay = document.getElementById('proOverlay');
+    const proCloseBtn = document.getElementById('proCloseBtn');
+    const proSelectBtn = document.getElementById('proSelectBtn');
+    const proTagFilters = document.getElementById('proTagFilters');
+    const proEmpty = document.getElementById('proEmpty');
+    const proList = document.getElementById('proList');
+    const proActionBar = document.getElementById('proActionBar');
+    const proCopyBtn = document.getElementById('proCopyBtn');
+    const proShareBtn = document.getElementById('proShareBtn');
     const aboutVersionValue = document.getElementById('aboutVersionValue');
     let pendingSharedTraining = null;
+    let pendingSharedExistingId = null;
     let driveBusy = false;
     let lastDriveAutoMergeAt = 0;
     let timerDriveBound = false;
@@ -4467,11 +5082,12 @@
     }
 
     function openSettings() {
+      closeProWorkspace();
       settingsOverlay.classList.remove('hidden');
       settingsOverlay.setAttribute('aria-hidden', 'false');
       showSettingsList();
       updateInstallVisibility();
-      updateLanguageButtons();
+      updateLanguageSelect();
       void refreshDriveSettingsUi();
       lucide.createIcons();
     }
@@ -4505,7 +5121,9 @@
     function formatDriveSyncTime(ts) {
       if (!ts) return t('googleNeverSynced');
       try {
-        return new Date(ts).toLocaleString(currentLocale === 'uk' ? 'uk-UA' : 'en-US', {
+        return new Date(ts).toLocaleString(
+          (window.AppLocale && AppLocale.DATE_LOCALES[currentLocale]) || 'en-US',
+          {
           dateStyle: 'medium',
           timeStyle: 'short'
         });
@@ -4627,52 +5245,122 @@
       }
     }
 
-    async function sharePreset(preset) {
-      const Drive = window.TimerDrive;
-      if (!Drive || !Drive.isGoogleDriveEnabled()) {
-        showToast(t('googleNotConfigured'), 'info');
-        return;
-      }
-      if (!Drive.isGoogleDriveLinked()) {
-        showToast(t('shareNeedSignIn'), 'info');
-        openSettings();
-        await showSettingsDrive();
-        return;
-      }
+    async function copyTextToClipboard(text) {
       try {
-        showToast(t('googleSyncing'), 'cloud');
-        const { url } = await Drive.createShareLink(preset);
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
         try {
-          await navigator.clipboard.writeText(url);
-          showToast(t('shareCopied'), 'link');
-        } catch (e) {
-          window.prompt(t('shareTraining'), url);
+          window.prompt(t('shareTraining'), text);
+          return true;
+        } catch {
+          return false;
         }
+      }
+    }
+
+    async function shareOrCopyText({ title, text, url }) {
+      if (typeof navigator.share === 'function') {
+        try {
+          const data = url ? { title, text: text || url, url } : { title, text };
+          if (!navigator.canShare || navigator.canShare(data)) {
+            await navigator.share(data);
+            return 'shared';
+          }
+        } catch (e) {
+          if (e && e.name === 'AbortError') return 'aborted';
+        }
+      }
+      const copied = await copyTextToClipboard(text || url || '');
+      return copied ? 'copied' : 'failed';
+    }
+
+    function encodePresetShareUrl(preset) {
+      const Share = window.TrainingShare;
+      if (!Share) {
+        const err = new Error('SHARE_UNAVAILABLE');
+        err.code = 'SHARE_UNAVAILABLE';
+        throw err;
+      }
+      return Share.encodeTrainingUrl(preset, {
+        name: resolvePresetName(preset),
+        resolveLabel: resolveSegmentLabel
+      });
+    }
+
+    async function sharePreset(preset) {
+      try {
+        const url = encodePresetShareUrl(preset);
+        const result = await shareOrCopyText({
+          title: resolvePresetName(preset),
+          url,
+          text: url
+        });
+        if (result === 'copied') showToast(t('shareCopied'), 'link');
+        else if (result === 'failed') showToast(t('shareFailed'), 'alert-triangle');
       } catch (e) {
         console.error(e);
-        showToast(e?.message || t('shareFailed'), 'alert-triangle');
+        if (e && e.code === 'SHARE_URL_TOO_LONG') showToast(t('shareTooLarge'), 'alert-triangle');
+        else showToast(t('shareFailed'), 'alert-triangle');
+      }
+    }
+
+    function refreshSharedBannerI18n() {
+      if (!pendingSharedTraining) return;
+      if (sharedBannerKicker) {
+        sharedBannerKicker.textContent = pendingSharedExistingId
+          ? t('sharedAlreadySaved')
+          : t('sharedBannerTitle');
+      }
+      if (sharedTrainingSaveBtn) {
+        sharedTrainingSaveBtn.textContent = pendingSharedExistingId
+          ? t('sharedOpen')
+          : t('sharedSave');
       }
     }
 
     function hideSharedTrainingBanner() {
       pendingSharedTraining = null;
+      pendingSharedExistingId = null;
       if (sharedTrainingBanner) sharedTrainingBanner.classList.add('hidden');
+      if (window.TrainingShare?.clearTrainingHashFromLocation) {
+        window.TrainingShare.clearTrainingHashFromLocation();
+      }
       if (window.TimerDrive?.clearShareHashFromLocation) {
         window.TimerDrive.clearShareHashFromLocation();
       }
     }
 
-    function showSharedTrainingBanner(training) {
+    function showSharedTrainingBanner(training, existingPreset) {
       pendingSharedTraining = training;
+      pendingSharedExistingId = existingPreset ? existingPreset.id : null;
       if (sharedTrainingName) sharedTrainingName.textContent = training.name || t('defaultPresetName');
       if (sharedTrainingMeta) sharedTrainingMeta.textContent = getPresetSubtitle(training);
+      refreshSharedBannerI18n();
       if (sharedTrainingBanner) {
         sharedTrainingBanner.classList.remove('hidden');
         lucide.createIcons();
       }
     }
 
+    function maybeOpenTrainingUrl() {
+      const Share = window.TrainingShare;
+      if (!Share || !appStore) return false;
+      const decoded = Share.parseTrainingFromLocation();
+      if (!decoded) return false;
+      const training = normalizePreset({
+        ...decoded,
+        id: generateId(),
+        isDefault: false,
+        tags: []
+      });
+      const existing = Share.findMatchingPreset(appStore.presets, training, resolvePresetName);
+      showSharedTrainingBanner(training, existing);
+      return true;
+    }
+
     async function maybeOpenSharedTraining() {
+      if (maybeOpenTrainingUrl()) return;
       const Drive = window.TimerDrive;
       if (!Drive) return;
       const fileId = Drive.parseShareFileIdFromLocation();
@@ -4680,11 +5368,16 @@
       try {
         await Drive.warmDriveAccessToken();
         const training = await Drive.loadSharedTraining(fileId);
-        showSharedTrainingBanner(normalizePreset({
+        const normalized = normalizePreset({
           ...training,
           id: training.id || generateId(),
-          isDefault: false
-        }));
+          isDefault: false,
+          tags: []
+        });
+        const existing = window.TrainingShare
+          ? window.TrainingShare.findMatchingPreset(appStore.presets, normalized, resolvePresetName)
+          : null;
+        showSharedTrainingBanner(normalized, existing);
       } catch (e) {
         console.warn(e);
         showToast(t('sharedLoadFailed'), 'alert-triangle');
@@ -4694,26 +5387,248 @@
 
     function savePendingSharedTraining() {
       if (!pendingSharedTraining) return;
+      if (pendingSharedExistingId) {
+        const existing = getPresetById(pendingSharedExistingId);
+        if (existing) {
+          loadPresetOnMain(existing);
+          showToast(t('sharedOpened', { name: resolvePresetName(existing) }), 'play');
+        }
+        hideSharedTrainingBanner();
+        closeProWorkspace();
+        switchTab('main', true);
+        return;
+      }
+      const baseName = pendingSharedTraining.name || t('defaultPresetName');
       const training = normalizePreset({
         ...pendingSharedTraining,
         id: generateId(),
         isDefault: false,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        name: pendingSharedTraining.name || t('defaultPresetName')
+        name: uniquifyPresetName(baseName),
+        tags: []
       });
-      if (typeof training.sortOrder !== 'number') {
-        const maxOrder = appStore.presets.reduce((max, p) => (
-          Math.max(max, typeof p.sortOrder === 'number' ? p.sortOrder : -1)
-        ), -1);
-        training.sortOrder = maxOrder + 1;
-      }
+      delete training.nameKey;
       savePreset(training);
       loadPresetOnMain(training);
       renderManagerList();
       showToast(t('sharedSaved', { name: training.name }), 'check');
       hideSharedTrainingBanner();
+      closeProWorkspace();
       switchTab('main', true);
+    }
+
+    let proSelectMode = false;
+    let proSelectedIds = new Set();
+    let proActiveTag = null;
+
+    function isProOpen() {
+      return !!(proOverlay && !proOverlay.classList.contains('hidden'));
+    }
+
+    function openProWorkspace() {
+      closeSettings();
+      if (!proOverlay) return;
+      proOverlay.classList.remove('hidden');
+      proOverlay.setAttribute('aria-hidden', 'false');
+      proSelectMode = false;
+      proSelectedIds = new Set();
+      renderProList();
+      lucide.createIcons();
+    }
+
+    function closeProWorkspace() {
+      if (!proOverlay) return;
+      proOverlay.classList.add('hidden');
+      proOverlay.setAttribute('aria-hidden', 'true');
+      proSelectMode = false;
+      proSelectedIds = new Set();
+    }
+
+    function getUsedTags() {
+      const map = new Map();
+      getPresets().forEach(preset => {
+        (preset.tags || []).forEach(tag => {
+          const key = tag.toLowerCase();
+          if (!map.has(key)) map.set(key, tag);
+        });
+      });
+      return [...map.values()].sort((a, b) => a.localeCompare(b));
+    }
+
+    function setPresetTags(preset, tags) {
+      const next = normalizePreset({ ...preset, tags: normalizeTags(tags) });
+      savePreset(next);
+      renderManagerList();
+    }
+
+    function encodeSelectedShareUrls() {
+      const urls = [];
+      let skippedLarge = false;
+      proSelectedIds.forEach(id => {
+        const preset = getPresetById(id);
+        if (!preset) return;
+        try {
+          urls.push(encodePresetShareUrl(preset));
+        } catch (e) {
+          if (e && e.code === 'SHARE_URL_TOO_LONG') skippedLarge = true;
+          else console.error(e);
+        }
+      });
+      return { urls, skippedLarge };
+    }
+
+    async function shareProSelection(copyOnly) {
+      if (!proSelectedIds.size) {
+        showToast(t('proNoneSelected'), 'info');
+        return;
+      }
+      const Share = window.TrainingShare;
+      if (!Share) {
+        showToast(t('proShareFailed'), 'alert-triangle');
+        return;
+      }
+      const { urls, skippedLarge } = encodeSelectedShareUrls();
+      if (!urls.length) {
+        showToast(skippedLarge ? t('shareTooLarge') : t('proShareFailed'), 'alert-triangle');
+        return;
+      }
+      const text = Share.buildShareText(urls);
+      if (copyOnly) {
+        const copied = await copyTextToClipboard(text);
+        showToast(copied ? t('proShareCopied') : t('proShareFailed'), copied ? 'link' : 'alert-triangle');
+        return;
+      }
+      const result = await shareOrCopyText({ title: t('proShareTitle'), text });
+      if (result === 'copied') showToast(t('proShareCopied'), 'link');
+      else if (result === 'failed') showToast(t('proShareFailed'), 'alert-triangle');
+      if (skippedLarge && result !== 'aborted') showToast(t('shareTooLarge'), 'alert-triangle');
+    }
+
+    function renderProList() {
+      if (!proList || !proOverlay || !appStore) return;
+      if (!isProOpen()) return;
+
+      const presets = getPresets().filter(preset => {
+        if (!proActiveTag) return true;
+        return (preset.tags || []).some(tag => tag.toLowerCase() === proActiveTag.toLowerCase());
+      });
+
+      if (proSelectBtn) {
+        proSelectBtn.textContent = proSelectMode ? t('proDoneSelect') : t('proSelect');
+      }
+      if (proActionBar) {
+        proActionBar.classList.toggle('hidden', !(proSelectMode && proSelectedIds.size));
+      }
+
+      const usedTags = getUsedTags();
+      if (proActiveTag && !usedTags.some(tag => tag.toLowerCase() === proActiveTag.toLowerCase())) {
+        proActiveTag = null;
+      }
+      if (proTagFilters) {
+        proTagFilters.innerHTML = '';
+        const chips = [{ name: t('proAllTags'), value: null }].concat(
+          usedTags.map(name => ({ name, value: name }))
+        );
+        chips.forEach(chip => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pro-tag-chip px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-colors';
+          const active = (chip.value == null && !proActiveTag)
+            || (chip.value && proActiveTag && chip.value.toLowerCase() === proActiveTag.toLowerCase());
+          if (active) btn.classList.add('is-active');
+          btn.textContent = chip.name;
+          btn.addEventListener('click', () => {
+            proActiveTag = chip.value;
+            renderProList();
+          });
+          proTagFilters.appendChild(btn);
+        });
+      }
+
+      proList.innerHTML = '';
+      if (proEmpty) proEmpty.classList.toggle('hidden', presets.length !== 0);
+
+      presets.forEach(preset => {
+        const selected = proSelectedIds.has(preset.id);
+        const card = document.createElement('div');
+        card.className = `pro-card rounded-xl bg-neutral-900 border border-neutral-800 p-3 sm:p-4 transition-colors ${selected ? 'is-selected' : ''}`;
+        card.dataset.presetId = preset.id;
+
+        const tagsHtml = (preset.tags || []).map(tag => `
+          <button type="button" class="pro-tag-remove px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-800 border border-neutral-700 text-neutral-300 hover:border-rose-500/40 hover:text-rose-300" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)} ×</button>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="flex items-start gap-2">
+            ${proSelectMode ? `<input type="checkbox" class="pro-select-box mt-1 w-4 h-4 accent-emerald-500 shrink-0" ${selected ? 'checked' : ''}>` : ''}
+            <div class="flex-1 min-w-0">
+              <div class="font-bold text-white truncate">${escapeHtml(resolvePresetName(preset))}</div>
+              <div class="text-xs text-neutral-500 mt-0.5">${escapeHtml(getPresetSubtitle(preset))}</div>
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                ${tagsHtml}
+                <button type="button" class="pro-add-tag-btn px-2 py-0.5 rounded-full text-[10px] font-semibold border border-dashed border-neutral-700 text-neutral-400 hover:text-emerald-300 hover:border-emerald-500/40">${t('proAddTag')}</button>
+              </div>
+            </div>
+            ${proSelectMode ? '' : `
+              <button type="button" class="pro-share-one shrink-0 p-2.5 rounded-xl bg-neutral-800 border border-neutral-700 text-neutral-400 hover:text-white" aria-label="${t('shareTraining')}">
+                <i data-lucide="share-2" class="w-4 h-4"></i>
+              </button>
+            `}
+          </div>
+        `;
+
+        const toggleSelect = () => {
+          if (proSelectedIds.has(preset.id)) proSelectedIds.delete(preset.id);
+          else proSelectedIds.add(preset.id);
+          renderProList();
+        };
+
+        if (proSelectMode) {
+          card.addEventListener('click', (e) => {
+            if (e.target.closest('.pro-add-tag-btn') || e.target.closest('.pro-tag-remove')) return;
+            toggleSelect();
+          });
+        }
+
+        const checkbox = card.querySelector('.pro-select-box');
+        if (checkbox) {
+          checkbox.addEventListener('click', (e) => e.stopPropagation());
+          checkbox.addEventListener('change', toggleSelect);
+        }
+
+        card.querySelectorAll('.pro-tag-remove').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const tag = btn.dataset.tag;
+            setPresetTags(preset, (preset.tags || []).filter(item => item !== tag));
+          });
+        });
+
+        const addBtn = card.querySelector('.pro-add-tag-btn');
+        if (addBtn) {
+          addBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const raw = window.prompt(t('proTagPrompt'), '');
+            if (raw == null) return;
+            const tag = String(raw).trim().slice(0, 32);
+            if (!tag) return;
+            setPresetTags(preset, [...(preset.tags || []), tag]);
+          });
+        }
+
+        const shareOne = card.querySelector('.pro-share-one');
+        if (shareOne) {
+          shareOne.addEventListener('click', (e) => {
+            e.stopPropagation();
+            void sharePreset(preset);
+          });
+        }
+
+        proList.appendChild(card);
+      });
+
+      lucide.createIcons();
     }
 
     function maybeShowInstallPrompt() {
@@ -4885,6 +5800,25 @@
     settingsBackdrop.addEventListener('click', closeSettings);
     settingsBackBtn.addEventListener('click', showSettingsList);
     settingsAboutBtn.addEventListener('click', showSettingsAbout);
+    if (settingsProBtn) {
+      settingsProBtn.addEventListener('click', openProWorkspace);
+    }
+    if (managerProBtn) {
+      managerProBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openProWorkspace();
+      });
+    }
+    if (proCloseBtn) proCloseBtn.addEventListener('click', closeProWorkspace);
+    if (proSelectBtn) {
+      proSelectBtn.addEventListener('click', () => {
+        proSelectMode = !proSelectMode;
+        if (!proSelectMode) proSelectedIds = new Set();
+        renderProList();
+      });
+    }
+    if (proCopyBtn) proCopyBtn.addEventListener('click', () => { void shareProSelection(true); });
+    if (proShareBtn) proShareBtn.addEventListener('click', () => { void shareProSelection(false); });
     if (settingsDriveBtn) {
       settingsDriveBtn.addEventListener('click', () => { void showSettingsDrive(); });
     }
@@ -4901,7 +5835,7 @@
           await maybeAutoMergeDrive(true);
         } catch (e) {
           console.error(e);
-          showToast(e?.message || t('googleSignInFailed'), 'alert-triangle');
+          showToast(t('googleSignInFailed'), 'alert-triangle');
         } finally {
           driveBusy = false;
         }
@@ -4919,7 +5853,7 @@
           await maybeAutoMergeDrive(true);
         } catch (e) {
           console.error(e);
-          showToast(e?.message || t('googleSignInFailed'), 'alert-triangle');
+          showToast(t('googleSignInFailed'), 'alert-triangle');
         } finally {
           driveBusy = false;
         }
@@ -4957,7 +5891,7 @@
           await refreshDriveSettingsUi();
         } catch (e) {
           console.error(e);
-          showToast(e?.message || t('googleSyncFailed'), 'alert-triangle');
+          showToast(t('googleSyncFailed'), 'alert-triangle');
           await refreshDriveSettingsUi();
         } finally {
           driveBusy = false;
@@ -4972,11 +5906,11 @@
         try {
           showToast(t('googleSyncing'), 'cloud');
           const result = await Drive.backupOnly();
-          showToast(t('googleBackupDone', { n: result.uploadedTrainings }), 'check');
+          showToast(t('googleBackupDone', { n: tp('trainings', result.uploadedTrainings) }), 'check');
           await refreshDriveSettingsUi();
         } catch (e) {
           console.error(e);
-          showToast(e?.message || t('googleSyncFailed'), 'alert-triangle');
+          showToast(t('googleSyncFailed'), 'alert-triangle');
         } finally {
           driveBusy = false;
         }
@@ -4996,13 +5930,21 @@
       sharedTrainingDismissBtn.addEventListener('click', hideSharedTrainingBanner);
     }
     window.addEventListener('timer-drive:ready', () => { void bindTimerDrive(); });
+    window.addEventListener('training-share:ready', () => {
+      if (appStore) maybeOpenTrainingUrl();
+    });
+    window.addEventListener('hashchange', () => { void maybeOpenSharedTraining(); });
     window.addEventListener('timer-drive:linked', () => { void refreshDriveSettingsUi(); });
     window.addEventListener('timer-drive:signed-out', () => { void refreshDriveSettingsUi(); });
     window.addEventListener('timer-drive:synced', () => { void refreshDriveSettingsUi(); });
     window.addEventListener('timer-drive:needs-reconnect', () => { void refreshDriveSettingsUi(); });
     window.addEventListener('timer-drive:auto-sync-failed', () => { void refreshDriveSettingsUi(); });
-    document.querySelectorAll('.lang-option').forEach((btn) => {
-      btn.addEventListener('click', () => setLocale(btn.dataset.locale));
+    const languageSelect = document.getElementById('languageSelect');
+    if (languageSelect) {
+      languageSelect.addEventListener('change', () => setLocale(languageSelect.value));
+    }
+    window.addEventListener('languagechange', () => {
+      if (loadStoredLocale() === null) setLocale('system');
     });
     settingsInstallBtn.addEventListener('click', () => {
       closeSettings();
@@ -5031,11 +5973,12 @@
     });
     bindTapHandler(skipBtn, skipSegment);
 
-    window.addEventListener('load', () => {
-      currentLocale = resolveLocale();
-      applyStaticI18n();
-      updateLanguageButtons();
+    currentLocale = resolveLocale();
+    applyStaticI18n();
+    updateLanguageSelect();
+    if (typeof refreshDriveSettingsUi === 'function') void refreshDriveSettingsUi();
 
+    window.addEventListener('load', () => {
       loadStore();
       resetDesignerForm();
 
@@ -5054,6 +5997,7 @@
       registerServiceWorker();
       maybeShowInstallPrompt();
 
+      maybeOpenTrainingUrl();
       if (window.TimerDrive) {
         void bindTimerDrive();
       }
@@ -5087,6 +6031,7 @@
       window.visualViewport.addEventListener('scroll', updateViewportLayout);
     }
   </script>
+  <script type="module" src="/js/share/bootstrap.js"></script>
   <script type="module" src="/js/google-drive/bootstrap.js"></script>
 </body>
 </html>

@@ -13,7 +13,7 @@ Also at [https://timer.konashevych.com/](https://timer.konashevych.com/) and [ht
 - **Training Manager** — Save, load, edit, delete, reorder, and share named presets (stored in `localStorage`)
 - **Google Drive** — Optional sign-in to sync/backup trainings across devices and create anyone-with-link share URLs (see [docs/google-oauth/README.md](docs/google-oauth/README.md))
 - **Audio cues** — Web Audio synthesizer with configurable regular and emphasised final beeps
-- **Internationalization** — English by default; Ukrainian UI when the browser language is Ukrainian or Russian
+- **Internationalization** — English, Ukrainian, and Russian. The UI follows the browser language preference (System) and can be overridden in Settings
 - **PWA** — Installable on mobile (Add to Home Screen), offline app-shell caching, settings with About and manual install
 
 ## Getting Started

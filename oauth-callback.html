@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <title>VPRAVA.ONLINE — Google sign-in</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="/js/locale.js"></script>
   </head>
   <body>
     <script>
@@ -18,9 +19,24 @@
           window.opener.postMessage(payload, window.location.origin);
           window.close();
         } else {
-          document.body.textContent = error
-            ? "Sign-in failed. Close this tab and try again from the timer app."
-            : "Sign-in complete. You can close this tab.";
+          var locale = (window.AppLocale && AppLocale.resolveLocale()) || "en";
+          var messages = {
+            en: {
+              fail: "Sign-in failed. Close this tab and try again from the timer app.",
+              ok: "Sign-in complete. You can close this tab."
+            },
+            uk: {
+              fail: "Не вдалося увійти. Закрийте цю вкладку й спробуйте знову в застосунку.",
+              ok: "Вхід виконано. Можете закрити цю вкладку."
+            },
+            ru: {
+              fail: "Не удалось войти. Закройте эту вкладку и попробуйте снова в приложении.",
+              ok: "Вход выполнен. Можно закрыть эту вкладку."
+            }
+          };
+          var pack = messages[locale] || messages.en;
+          document.documentElement.lang = locale;
+          document.body.textContent = error || !code ? pack.fail : pack.ok;
         }
       })();
     </script>

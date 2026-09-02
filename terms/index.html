@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Terms of Service — VPRAVA.ONLINE</title>
+  <script src="/js/locale.js"></script>
+  <script>
+    (function () {
+      var locale = (window.AppLocale && AppLocale.resolveLocale()) || 'en';
+      var titles = {
+        en: 'Terms of Service — VPRAVA.ONLINE',
+        uk: 'Умови використання — VPRAVA.ONLINE',
+        ru: 'Условия использования — VPRAVA.ONLINE'
+      };
+      document.documentElement.lang = locale;
+      document.documentElement.setAttribute('data-locale', locale);
+      document.title = titles[locale] || titles.en;
+    })();
+  </script>
   <meta name="theme-color" content="#10b981">
   <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
   <style>
@@ -11,28 +25,80 @@
     a { color: #34d399; }
     h1 { font-size: 1.5rem; }
     h2 { font-size: 1.1rem; margin-top: 1.75rem; }
+    [data-i18n-page] { display: none; }
+    html:not([data-locale]) [data-i18n-page="en"],
+    html[data-locale="en"] [data-i18n-page="en"],
+    html[data-locale="uk"] [data-i18n-page="uk"],
+    html[data-locale="ru"] [data-i18n-page="ru"] { display: block; }
   </style>
 </head>
 <body>
   <p><a href="/">← VPRAVA.ONLINE</a></p>
-  <h1>Terms of Service</h1>
-  <p>Last updated: 18 July 2026</p>
-  <p>
-    VPRAVA.ONLINE is provided free of charge as open-source software (MIT License)
-    at <a href="https://vprava.online/">vprava.online</a>
-    (also <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
-  </p>
-  <h2>Use at your own risk</h2>
-  <p>
-    The app is a timing and workout-planning tool. You are responsible for exercising safely.
-    The software is provided “as is”, without warranty of any kind.
-  </p>
-  <h2>Google account features</h2>
-  <p>
-    Optional Google Drive sync and sharing are subject to Google’s terms and your own Drive storage limits.
-    You control who can open share links you create (anyone with the link can view the snapshot).
-  </p>
-  <h2>Contact</h2>
-  <p>Feedback: <a href="https://t.me/oleksiiko">@oleksiiko</a>.</p>
+
+  <article data-i18n-page="en">
+    <h1>Terms of Service</h1>
+    <p>Last updated: 18 July 2026</p>
+    <p>
+      VPRAVA.ONLINE is provided free of charge as open-source software (MIT License)
+      at <a href="https://vprava.online/">vprava.online</a>
+      (also <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
+    </p>
+    <h2>Use at your own risk</h2>
+    <p>
+      The app is a timing and workout-planning tool. You are responsible for exercising safely.
+      The software is provided “as is”, without warranty of any kind.
+    </p>
+    <h2>Google account features</h2>
+    <p>
+      Optional Google Drive sync and sharing are subject to Google’s terms and your own Drive storage limits.
+      You control who can open share links you create (anyone with the link can view the snapshot).
+    </p>
+    <h2>Contact</h2>
+    <p>Feedback: <a href="https://t.me/oleksiiko">@oleksiiko</a>.</p>
+  </article>
+
+  <article data-i18n-page="uk">
+    <h1>Умови використання</h1>
+    <p>Останнє оновлення: 18 липня 2026</p>
+    <p>
+      VPRAVA.ONLINE надається безоплатно як відкрите програмне забезпечення (ліцензія MIT)
+      за адресою <a href="https://vprava.online/">vprava.online</a>
+      (також <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
+    </p>
+    <h2>Використовуйте на власний ризик</h2>
+    <p>
+      Застосунок — це інструмент для відліку часу та планування тренувань. Ви відповідаєте за безпечні заняття.
+      Програмне забезпечення надається «як є», без жодних гарантій.
+    </p>
+    <h2>Функції облікового запису Google</h2>
+    <p>
+      Необов’язкова синхронізація та поширення через Google Drive підпорядковуються умовам Google і лімітам вашого Drive.
+      Ви контролюєте, хто може відкрити створені вами посилання (будь-хто з посиланням може переглянути знімок).
+    </p>
+    <h2>Контакт</h2>
+    <p>Зворотний зв’язок: <a href="https://t.me/oleksiiko">@oleksiiko</a>.</p>
+  </article>
+
+  <article data-i18n-page="ru">
+    <h1>Условия использования</h1>
+    <p>Последнее обновление: 18 июля 2026</p>
+    <p>
+      VPRAVA.ONLINE предоставляется бесплатно как открытое программное обеспечение (лицензия MIT)
+      по адресу <a href="https://vprava.online/">vprava.online</a>
+      (также <a href="https://timer.konashevych.com/">timer.konashevych.com</a>).
+    </p>
+    <h2>Используйте на свой риск</h2>
+    <p>
+      Приложение — это инструмент для отсчёта времени и планирования тренировок. Вы отвечаете за безопасные занятия.
+      Программное обеспечение предоставляется «как есть», без каких-либо гарантий.
+    </p>
+    <h2>Функции аккаунта Google</h2>
+    <p>
+      Необязательная синхронизация и обмен через Google Drive подчиняются условиям Google и лимитам вашего Drive.
+      Вы контролируете, кто может открыть созданные вами ссылки (любой, у кого есть ссылка, может просмотреть снимок).
+    </p>
+    <h2>Контакт</h2>
+    <p>Обратная связь: <a href="https://t.me/oleksiiko">@oleksiiko</a>.</p>
+  </article>
 </body>
 </html>
