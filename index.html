@@ -915,7 +915,7 @@
         tabTimer: 'Timer',
         tabManager: 'Manager',
         done: 'Done!',
-        defaultPresetName: 'Default',
+        defaultPresetName: 'Default (example)',
         badgeDefault: 'Default',
         badgeActive: 'Active',
         work: 'Work',
@@ -956,7 +956,7 @@
         go: 'Go',
         presetSubtitle: '{cycles} · {total} total',
         presetSubtitleReps: '{reps} · {total} total',
-        catalogPushups15: '15 Push-ups',
+        catalogPushups15: '15 Push-ups (example)',
         catalogSquats15: '15 Squats',
         tagHiit: 'HIIT',
         tagStrength: 'Strength',
@@ -1132,7 +1132,7 @@
         tabTimer: 'Таймер',
         tabManager: 'Менеджер',
         done: 'Готово!',
-        defaultPresetName: 'За замовчуванням',
+        defaultPresetName: 'За замовчуванням (приклад)',
         badgeDefault: 'За замовчуванням',
         badgeActive: 'Активне',
         work: 'Робота',
@@ -1173,7 +1173,7 @@
         go: 'Марш',
         presetSubtitle: '{cycles} · {total} загалом',
         presetSubtitleReps: '{reps} · {total} загалом',
-        catalogPushups15: '15 віджимань',
+        catalogPushups15: '15 віджимань (приклад)',
         catalogSquats15: '15 присідань',
         tagHiit: 'HIIT',
         tagStrength: 'Сила',
@@ -1349,7 +1349,7 @@
         tabTimer: 'Таймер',
         tabManager: 'Менеджер',
         done: 'Готово!',
-        defaultPresetName: 'По умолчанию',
+        defaultPresetName: 'По умолчанию (пример)',
         badgeDefault: 'По умолчанию',
         badgeActive: 'Активная',
         work: 'Работа',
@@ -1390,7 +1390,7 @@
         go: 'Марш',
         presetSubtitle: '{cycles} · {total} всего',
         presetSubtitleReps: '{reps} · {total} всего',
-        catalogPushups15: '15 отжиманий',
+        catalogPushups15: '15 отжиманий (пример)',
         catalogSquats15: '15 приседаний',
         tagHiit: 'HIIT',
         tagStrength: 'Сила',
@@ -1916,6 +1916,7 @@
       return {
         id,
         name: t('defaultPresetName'),
+        nameKey: 'defaultPresetName',
         isDefault: true,
         sortOrder: 0,
         createdAt: now,
@@ -2096,8 +2097,8 @@
       });
     }
 
-    const CATALOG_BUILDERS = [
-      buildCatalogPushupsPreset,
+    const CORE_CATALOG_BUILDERS = [buildCatalogPushupsPreset];
+    const DEMO_CATALOG_BUILDERS = [
       buildCatalogSquatsPreset,
       buildCatalogTabataPreset,
       buildCatalogHiit3015Preset,
@@ -2106,15 +2107,41 @@
       buildCatalogPyramidPreset,
       buildCatalog3030Preset
     ];
+    const DEMO_CATALOG_IDS = [
+      CATALOG_SQUATS_ID,
+      CATALOG_TABATA_ID,
+      CATALOG_HIIT3015_ID,
+      CATALOG_SPRINT_ID,
+      CATALOG_BOXING_ID,
+      CATALOG_PYRAMID_ID,
+      CATALOG_3030_ID
+    ];
 
-    function ensureCatalogPresets() {
+    function isDemoExamplesMode() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const raw = String(params.get('examples') || '').trim().toLowerCase();
+        if (raw === '1' || raw === 'true' || raw === 'yes' || raw === 'pro') return true;
+        const path = String(window.location.pathname || '').replace(/\/+$/, '');
+        return path === '/examples' || path.endsWith('/examples');
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function isStockDemoPreset(preset) {
+      return !!(preset && DEMO_CATALOG_IDS.includes(preset.id) && preset.nameKey);
+    }
+
+    function ensureCatalogPresetsFrom(builders, { ignoreTombstones = false } = {}) {
       if (!appStore || !Array.isArray(appStore.presets)) return false;
       ensureDeletedTrainingsArray();
       let added = false;
-      CATALOG_BUILDERS.forEach(build => {
+      builders.forEach(build => {
         const preset = build();
         if (getPresetById(preset.id)) return;
-        if (getDeletedTrainings().some(entry => entry.id === preset.id)) return;
+        if (!ignoreTombstones && getDeletedTrainings().some(entry => entry.id === preset.id)) return;
+        if (ignoreTombstones) clearDeletedTraining(preset.id);
         const maxOrder = appStore.presets.reduce((max, p) => (
           Math.max(max, typeof p.sortOrder === 'number' ? p.sortOrder : -1)
         ), -1);
@@ -2123,6 +2150,66 @@
         added = true;
       });
       return added;
+    }
+
+    function pruneDemoCatalogPresets() {
+      if (isDemoExamplesMode()) return false;
+      if (!appStore || !Array.isArray(appStore.presets)) return false;
+      let removed = false;
+      const keep = [];
+      for (const preset of appStore.presets) {
+        if (isStockDemoPreset(preset)) {
+          recordDeletedTraining(preset.id);
+          removed = true;
+          continue;
+        }
+        keep.push(preset);
+      }
+      if (!removed) return false;
+      if (!keep.length) keep.push(createDefaultPreset());
+      appStore.presets = keep;
+      if (!getPresetById(appStore.defaultPresetId)) {
+        const first = keep[0];
+        first.isDefault = true;
+        appStore.defaultPresetId = first.id;
+      }
+      if (!getPresetById(appStore.activePresetId)) {
+        appStore.activePresetId = appStore.defaultPresetId || keep[0].id;
+      }
+      return true;
+    }
+
+    function ensureStockDefaultNameKey() {
+      if (!appStore || !Array.isArray(appStore.presets)) return false;
+      const preset = getPresetById(appStore.defaultPresetId) || appStore.presets.find(p => p.isDefault);
+      if (!preset || preset.nameKey) return false;
+      const stockNames = new Set([
+        'Default',
+        'За замовчуванням',
+        'По умолчанию',
+        'Default (example)',
+        'За замовчуванням (приклад)',
+        'По умолчанию (пример)'
+      ]);
+      if (!stockNames.has(String(preset.name || '').trim())) return false;
+      preset.nameKey = 'defaultPresetName';
+      preset.name = t('defaultPresetName');
+      return true;
+    }
+
+    function ensureCatalogPresets() {
+      const coreAdded = ensureCatalogPresetsFrom(CORE_CATALOG_BUILDERS);
+      if (!isDemoExamplesMode()) return coreAdded;
+      DEMO_CATALOG_IDS.forEach(id => clearDeletedTraining(id));
+      const demoAdded = ensureCatalogPresetsFrom(DEMO_CATALOG_BUILDERS, { ignoreTombstones: true });
+      return coreAdded || demoAdded;
+    }
+
+    function applyCatalogMode() {
+      const didCatalog = ensureCatalogPresets();
+      const didPrune = pruneDemoCatalogPresets();
+      const didDefaultName = ensureStockDefaultNameKey();
+      return didCatalog || didPrune || didDefaultName;
     }
 
     function migrateCatalogPushupsPreset() {
@@ -2140,7 +2227,10 @@
 
     function createSeedStore() {
       const preset = createDefaultPreset();
-      const catalog = CATALOG_BUILDERS.map((build, index) => {
+      const builders = isDemoExamplesMode()
+        ? CORE_CATALOG_BUILDERS.concat(DEMO_CATALOG_BUILDERS)
+        : CORE_CATALOG_BUILDERS;
+      const catalog = builders.map((build, index) => {
         const item = build();
         item.sortOrder = index + 1;
         return item;
@@ -2208,9 +2298,9 @@
         appStore.presets = appStore.presets.map(normalizePreset);
         ensureDeletedTrainingsArray();
         const didSort = ensurePresetSortOrder(false);
-        const didCatalog = ensureCatalogPresets();
+        const didCatalogMode = applyCatalogMode();
         const didPushupsTempo = migrateCatalogPushupsPreset();
-        if (didSort || didCatalog || didPushupsTempo) saveStore(appStore);
+        if (didSort || didCatalogMode || didPushupsTempo) saveStore(appStore);
         return appStore;
       } catch (e) {
         console.warn('Corrupt storage, resetting.', e);
@@ -2306,6 +2396,11 @@
     /** Upsert from Drive pull — keeps remote updatedAt and skips auto-backup debounce. */
     function upsertPresetFromDrive(training) {
       const preset = normalizePreset({ ...training });
+      if (!isDemoExamplesMode() && isStockDemoPreset(preset)) {
+        recordDeletedTraining(preset.id);
+        persistStoreWithoutDriveSync();
+        return;
+      }
       clearDeletedTraining(preset.id);
       const idx = appStore.presets.findIndex(p => p.id === preset.id);
       if (idx >= 0) {
@@ -5313,7 +5408,9 @@
       try {
         await Drive.warmDriveAccessToken();
         const result = await Drive.syncNow({ silent: true });
-        if (result?.pulled > 0 || result?.deleted > 0) {
+        const catalogChanged = applyCatalogMode();
+        if (catalogChanged) saveStore(appStore);
+        if (result?.pulled > 0 || result?.deleted > 0 || catalogChanged) {
           renderManagerList();
           const active = getPresetById(appStore.activePresetId);
           if (active) loadPresetOnMain(active, false);

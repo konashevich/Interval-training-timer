@@ -1,8 +1,8 @@
 // Deploy checklist:
 // 1. Bump APP_VERSION in version.js
 // 2. Bump @release below to the same value (changes SW bytes so browsers detect the update)
-// @release 1.6.9
-const SW_RELEASE = '1.6.9';
+// @release 1.7.0
+const SW_RELEASE = '1.7.0';
 
 importScripts('/version.js?v=' + encodeURIComponent(SW_RELEASE));
 if (typeof APP_VERSION === 'undefined' || APP_VERSION !== SW_RELEASE) {
@@ -22,6 +22,8 @@ const PRECACHE_URLS = [
   '/privacy/index.html',
   '/terms/',
   '/terms/index.html',
+  '/examples/',
+  '/examples/index.html',
   '/js/locale.js',
   '/js/share/bootstrap.js',
   '/js/share/trainingUrl.js',
